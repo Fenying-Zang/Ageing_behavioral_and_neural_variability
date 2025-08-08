@@ -1,8 +1,6 @@
-# neural_variability_aging
+# ageing_behavioral_and_neural_variability
 
-This repository contains the code and data used to analyze age-related changes in neural variability during a visual decision-making task. We use large-scale extracellular Neuropixels recordings in awake, behaving mice, made publicly available by the International Brain Laboratory (IBL).
-
-Our large-scale survey of single-neuron functioning shows that there is no simple, global increase in neural variability in older animals.
+This repository contains the code and data used to analyze age-related changes in behavioral and neural variability during a visual decision-making task. We use large-scale extracellular Neuropixels recordings in behaving mice, made publicly available by the International Brain Laboratory (IBL).
 
 ## Installation & Setup
 
@@ -21,8 +19,8 @@ conda activate brainwide
 
 ```bash
 cd ..
-git clone https://github.com/YOUR_USERNAME/neural_variability_aging.git
-cd neural_variability_aging
+git clone https://github.com/Fenying-Zang/ageing_behavioral_and_neural_variability.git
+cd ageing_behavioral_and_neural_variability
 ```
 
 > All code and notebooks in this repository are compatible with the `brainwide` conda environment.
@@ -30,28 +28,27 @@ cd neural_variability_aging
 ## Project Structure
 
 ```
-neural_variability_aging/
+ageing_behavioral_and_neural_variability/
 ├── README.md          # Project overview and instructions
 ├── LICENSE            # MIT license
 ├── data/              # Intermediate or derived data files
-├── scripts/           # Python scripts for analysis
-├── notebooks/         # Jupyter notebooks used to generate figures
+├── scripts/           # Python scripts for analysis and figures
+├── notebooks/         # Jupyter notebooks used to explore data
 ├── figures/           # Output figures
-└── results/           # Output CSVs, summary tables, models
+└── results/           # Output CSVs, summary tables
 ```
 
 ## Reproducing Figures
 
-Each Jupyter notebook in `notebooks/` corresponds to one or more figures in the manuscript.
+In the `scripts/` folder, you will find script(s) for each figure in the manuscript.
 
-> Intermediate `.pkl` or `.csv` files required for plotting are provided in the `data/` folder for reproducibility.
+> Intermediate `.parquet` or `.csv` files required for plotting are provided in the `data/` folder for reproducibility.
 
 ## Data
 
-This project does **not** include raw data. To access the full IBL dataset, please refer to:
+To access the raw IBL dataset, please refer to:
 
 - IBL data access: https://int-brain-lab.github.io/ONE/
-- ONE light datasets used here are downloaded via scripts in the original [paper-brain-wide-map](https://github.com/int-brain-lab/paper-brain-wide-map)
 
 ## License
 
