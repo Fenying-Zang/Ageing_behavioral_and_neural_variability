@@ -2,6 +2,9 @@
 
 This repository contains the code and data used to analyze age-related changes in behavioral and neural variability during a visual decision-making task. We use large-scale extracellular Neuropixels recordings in behaving mice, made publicly available by the International Brain Laboratory (IBL).
 
+Fenying Zang, Leiden University, 2025, f.zang@fsw.leidenuniv.nl
+
+
 ## Installation & Setup
 
 This project builds on the [IBL brain-wide map project](https://github.com/int-brain-lab/paper-brain-wide-map). We recommend installing the same environment to ensure compatibility:
