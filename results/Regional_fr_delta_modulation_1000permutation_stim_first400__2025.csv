@@ -1,0 +1,17 @@
+cluster_region,y_col,n_perm,formula,observed_val,observed_val_p,p_perm,ave_null_dist
+MOs,fr_delta_modulation,1000,fr_delta_modulation ~ age_years + C(cluster_region) + n_trials,-1.5410125083800832,5.986794415912315e-16,0.2827172827172827,-0.02078800792565028
+ACA,fr_delta_modulation,1000,fr_delta_modulation ~ age_years + C(cluster_region) + n_trials,-0.2769548508585838,0.19080053562177535,0.8101898101898102,0.041740373661440254
+CP,fr_delta_modulation,1000,fr_delta_modulation ~ age_years + C(cluster_region) + n_trials,-0.7845940700651683,0.004619594279890689,0.48951048951048953,-0.07589275482907498
+LS,fr_delta_modulation,1000,fr_delta_modulation ~ age_years + C(cluster_region) + n_trials,0.4844271291362193,3.3560521582488378e-06,0.3926073926073926,-0.04437812140061306
+ACB,fr_delta_modulation,1000,fr_delta_modulation ~ age_years + C(cluster_region) + n_trials,-0.8055670092262561,0.030726348793626474,0.4095904095904096,0.04113493359714494
+mPFC,fr_delta_modulation,1000,fr_delta_modulation ~ age_years + C(cluster_region) + n_trials,-0.047252148243856845,0.8938022901761028,0.972027972027972,0.006027294939075798
+ORB,fr_delta_modulation,1000,fr_delta_modulation ~ age_years + C(cluster_region) + n_trials,0.42854538286728056,0.015353088383608958,0.5374625374625375,-0.030169980701707465
+OLF,fr_delta_modulation,1000,fr_delta_modulation ~ age_years + C(cluster_region) + n_trials,0.5257746292069121,0.0002262539330838915,0.46253746253746253,0.025672756339578356
+VISp+pm,fr_delta_modulation,1000,fr_delta_modulation ~ age_years + C(cluster_region) + n_trials,-1.3233896721561194,2.7706673582691575e-11,0.36863136863136864,0.15553452190698788
+SCm,fr_delta_modulation,1000,fr_delta_modulation ~ age_years + C(cluster_region) + n_trials,4.83542505869928,1.9342522340674e-15,0.1038961038961039,0.0059241548974339866
+MBm,fr_delta_modulation,1000,fr_delta_modulation ~ age_years + C(cluster_region) + n_trials,1.3946319237314495,1.3641609751419086e-12,0.17782217782217782,0.04260926329486783
+PPC,fr_delta_modulation,1000,fr_delta_modulation ~ age_years + C(cluster_region) + n_trials,-0.9340406707301437,0.00011530415375502676,0.3176823176823177,0.09774837920810023
+CA1,fr_delta_modulation,1000,fr_delta_modulation ~ age_years + C(cluster_region) + n_trials,1.7403650801162116,1.524039825841989e-11,0.03296703296703297,0.05091074837228011
+DG,fr_delta_modulation,1000,fr_delta_modulation ~ age_years + C(cluster_region) + n_trials,3.516072907286619,5.1985617775453613e-45,0.012987012987012988,0.03229280902756278
+LP,fr_delta_modulation,1000,fr_delta_modulation ~ age_years + C(cluster_region) + n_trials,-0.04243454972952035,0.6890127817306421,0.9340659340659341,-0.012517863731313496
+PO,fr_delta_modulation,1000,fr_delta_modulation ~ age_years + C(cluster_region) + n_trials,0.45873809923761444,7.856406257101375e-06,0.42857142857142855,0.006135746954766187

@@ -5,9 +5,9 @@ import os
 import pingouin as pg
 import math
 
-def load_filtered_recordings(datapath, filename = 'BWM_LL_release_afterQC_df.csv'):
+def load_filtered_recordings(C.DATAPATH, filename = 'BWM_LL_release_afterQC_df.csv'):
     try:
-        recordings_filtered = pd.read_csv(os.path.join(datapath,filename))
+        recordings_filtered = pd.read_csv(os.path.join(C.DATAPATH,filename))
     except Exception as err:
         print(f'errored: {err}')
         recordings_filtered =np.nan

@@ -1,0 +1,17 @@
+cluster_region,metric,formula_full,BF10_age,BF10_age_category,BF10_region,mean_contrast,low_ci_contrast,high_ci_contrast,mean_age,low_ci_age,high_ci_age,age_ci_conclusion,contrast_ci_conclusion
+MOs,pre_ff,log_pre_ff ~ age_years + abs_contrast + n_trials ,[5.23870557e+13],strong H1,inconclusive,,,,,,,True,True
+ACA,pre_ff,log_pre_ff ~ age_years + abs_contrast + n_trials ,[14.80246884],strong H1,inconclusive,,,,,,,True,True
+CP,pre_ff,log_pre_ff ~ age_years + abs_contrast + n_trials ,[30.78969913],strong H1,inconclusive,,,,,,,True,True
+LS,pre_ff,log_pre_ff ~ age_years + abs_contrast + n_trials ,[0.03951602],strong H0,inconclusive,,,,,,,True,True
+ACB,pre_ff,log_pre_ff ~ age_years + abs_contrast + n_trials ,[0.09255844],strong H0,inconclusive,,,,,,,True,True
+mPFC,pre_ff,log_pre_ff ~ age_years + abs_contrast + n_trials ,[0.14261306],moderate H0,inconclusive,,,,,,,True,True
+ORB,pre_ff,log_pre_ff ~ age_years + abs_contrast + n_trials ,[43546.06954158],strong H1,inconclusive,,,,,,,True,True
+OLF,pre_ff,log_pre_ff ~ age_years + abs_contrast + n_trials ,[1352.73402962],strong H1,inconclusive,,,,,,,True,True
+VISp+pm,pre_ff,log_pre_ff ~ age_years + abs_contrast + n_trials ,[1597.80210157],strong H1,inconclusive,,,,,,,True,True
+SCm,pre_ff,log_pre_ff ~ age_years + abs_contrast + n_trials ,[227.1849845],strong H1,inconclusive,,,,,,,True,True
+MBm,pre_ff,log_pre_ff ~ age_years + abs_contrast + n_trials ,[3.75815236e+08],strong H1,inconclusive,,,,,,,True,True
+PPC,pre_ff,log_pre_ff ~ age_years + abs_contrast + n_trials ,[1018.71748568],strong H1,inconclusive,,,,,,,True,True
+CA1,pre_ff,log_pre_ff ~ age_years + abs_contrast + n_trials ,[797.52419098],strong H1,inconclusive,,,,,,,True,True
+DG,pre_ff,log_pre_ff ~ age_years + abs_contrast + n_trials ,[0.15203378],moderate H0,inconclusive,,,,,,,True,True
+LP,pre_ff,log_pre_ff ~ age_years + abs_contrast + n_trials ,[6.11794115],moderate H1,inconclusive,,,,,,,True,True
+PO,pre_ff,log_pre_ff ~ age_years + abs_contrast + n_trials ,[6067292.05649555],strong H1,inconclusive,,,,,,,True,True

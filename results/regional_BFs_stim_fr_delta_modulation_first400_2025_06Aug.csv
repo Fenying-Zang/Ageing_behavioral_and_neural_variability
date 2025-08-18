@@ -1,0 +1,17 @@
+cluster_region,metric,formula_full,BF10_age,BF10_age_category,BF10_region,mean_contrast,low_ci_contrast,high_ci_contrast,mean_age,low_ci_age,high_ci_age,age_ci_conclusion,contrast_ci_conclusion
+MOs,fr_delta_modulation,fr_delta_modulation ~ age_years  + n_trials,[5.82275339],moderate H1,inconclusive,,,,,,,True,True
+ACA,fr_delta_modulation,fr_delta_modulation ~ age_years  + n_trials,[0.2176973],moderate H0,inconclusive,,,,,,,True,True
+CP,fr_delta_modulation,fr_delta_modulation ~ age_years  + n_trials,[0.11120215],moderate H0,inconclusive,,,,,,,True,True
+LS,fr_delta_modulation,fr_delta_modulation ~ age_years  + n_trials,[0.16241605],moderate H0,inconclusive,,,,,,,True,True
+ACB,fr_delta_modulation,fr_delta_modulation ~ age_years  + n_trials,[0.2874917],moderate H0,inconclusive,,,,,,,True,True
+mPFC,fr_delta_modulation,fr_delta_modulation ~ age_years  + n_trials,[0.15998022],moderate H0,inconclusive,,,,,,,True,True
+ORB,fr_delta_modulation,fr_delta_modulation ~ age_years  + n_trials,[0.15614989],moderate H0,inconclusive,,,,,,,True,True
+OLF,fr_delta_modulation,fr_delta_modulation ~ age_years  + n_trials,[0.23928267],moderate H0,inconclusive,,,,,,,True,True
+VISp+pm,fr_delta_modulation,fr_delta_modulation ~ age_years  + n_trials,[1.44412733],weak H1,inconclusive,,,,,,,True,True
+SCm,fr_delta_modulation,fr_delta_modulation ~ age_years  + n_trials,[1.57288251],weak H1,inconclusive,,,,,,,True,True
+MBm,fr_delta_modulation,fr_delta_modulation ~ age_years  + n_trials,[1.13883227],weak H1,inconclusive,,,,,,,True,True
+PPC,fr_delta_modulation,fr_delta_modulation ~ age_years  + n_trials,[0.27023121],moderate H0,inconclusive,,,,,,,True,True
+CA1,fr_delta_modulation,fr_delta_modulation ~ age_years  + n_trials,[1.00347608],weak H1,inconclusive,,,,,,,True,True
+DG,fr_delta_modulation,fr_delta_modulation ~ age_years  + n_trials,[8990.66681983],strong H1,inconclusive,,,,,,,True,True
+LP,fr_delta_modulation,fr_delta_modulation ~ age_years  + n_trials,[0.08900643],strong H0,inconclusive,,,,,,,True,True
+PO,fr_delta_modulation,fr_delta_modulation ~ age_years  + n_trials,[0.21530438],moderate H0,inconclusive,,,,,,,True,True

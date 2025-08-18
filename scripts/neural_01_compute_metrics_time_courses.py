@@ -6,17 +6,13 @@ output:
 
 """
 #%%
+import config as C
 import logging
 import traceback
-
-import pickle
 import os
 import pandas as pd
 import numpy as np
-import sys, os, time
 from datetime import datetime
-import seaborn as sns
-import matplotlib.pyplot as plt
 from pathlib import Path
 from one.api import ONE
 from iblatlas.atlas import AllenAtlas
@@ -24,21 +20,17 @@ from brainbox.population.decode import get_spike_counts_in_bins
 from brainbox.task.closed_loop import compute_comparison_statistics
 from brainbox.io.one import SpikeSortingLoader
 from iblutil.numerical import ismember
-
-# from reproducible_ephys_processing import compute_psth, compute_new_label, smoothing_sliding
 from iblatlas.regions import BrainRegions
-from utils.neuron_utils import cal_presence_ratio, combine_regions, smoothing_sliding
-from utils import config
-from utils.behavior_utils import clean_rts, filter_trials
-from utils.config import datapath, bin_size, align_event, event_epoch, slide_kwargs, trial_type, smoothing, rt_variable_name, ROIs
-from utils.config import rt_cutoff, firing_rate_threshold, presence_ratio_threshold, event_list
+from scripts.utils.neuron_utils import cal_presence_ratio, combine_regions, smoothing_sliding
+from scripts.utils.behavior_utils import clean_rts, filter_trials
 from glob import glob
 import logging
+from scripts.utils.io import read_table
 
 def clean_rt_table(trials_table,rt_variable ):
 
     trials_table['rt_raw'] = trials_table[rt_variable].copy()
-    trials_table['rt'] = clean_rts(trials_table[rt_variable], cutoff=rt_cutoff)    
+    trials_table['rt'] = clean_rts(trials_table[rt_variable], cutoff=C.RT_CUTOFF)    
     return trials_table
 
 def enrich_df(conditionsplit=False, k=None, id=None, ff_residuals=None, fr_residuals=None, time=None, bins_residuals_mean=None, bins_residuals_var=None, 
@@ -98,7 +90,7 @@ def enrich_df(conditionsplit=False, k=None, id=None, ff_residuals=None, fr_resid
     #     df_curr['signed_contrast'] = signed_contrast
 
     df_curr['n_trials']=n_trials  
-    df_curr['trials_type']= trial_type
+    df_curr['trials_type']= C.TRIAL_TYPE
 
     return df_curr
 
@@ -159,7 +151,7 @@ def enrich_df_conditions(conditionsplit=True, k=None, id=None, ff=None, fr=None,
     df_curr['signed_contrast'] = signed_contrast
 
     df_curr['n_trials']=n_trials  
-    df_curr['trials_type']= trial_type
+    df_curr['trials_type']= C.TRIAL_TYPE
 
     return df_curr
 def normalize_epoch_extremum(matrix_target, matrix_ref):
@@ -192,21 +184,21 @@ def extract_mouse_info (trials_table, eid):
 
     return trials, subject, sex, age_at_recording, sess_date
 
-def map_event(align_event):
-    if align_event == 'stim': #'stim','move'
+def map_event():
+    if C.ALIGN_EVENT == 'stim': #'stim','move'
         event = 'stimOn_times' #movement, feedback
-    elif align_event == 'move':
+    elif C.ALIGN_EVENT == 'move':
         event = 'firstMovement_times' #movement, feedback
-    elif align_event == 'feedback':
+    elif C.ALIGN_EVENT == 'feedback':
         event = 'feedback_times' #movement, feedback
     return event
 
-def load_and_prepare_trials(datapath, trial_type, event_list, clean_rt, rt_variable_name):
+def load_and_prepare_trials( trial_type, event_list, clean_rt, rt_variable_name):
     """
     Load and filter trials table.
     Returns: cleaned trials_table
     """
-    trials_path = os.path.join(datapath, 'ibl_included_eids_trials_table2025_full.csv')
+    trials_path = os.path.join(C.DATAPATH, 'ibl_included_eids_trials_table2025_full.csv')
     try:
         trials_table = pd.read_csv(trials_path)
     except Exception as err:
@@ -250,7 +242,7 @@ def load_sorting_and_clusters(row, one, no_iblsortor):
     return spikes, clusters, channels, no_iblsortor
 
 
-def compute_cluster_metrics(spikes, clusters, trials, align_event, br, hist_win=10):
+def compute_cluster_metrics(spikes, clusters, trials, br, hist_win=10):
     """
     Compute presence ratio and firing rate for clusters within trial-aligned window.
     Also maps brain regions to Beryl and merged region.
@@ -260,7 +252,7 @@ def compute_cluster_metrics(spikes, clusters, trials, align_event, br, hist_win=
         spike_times_btw: filtered spike times (within window)
         spike_clusters: corresponding spike cluster ids
     """
-    event = map_event(align_event)
+    event = map_event()
     start_point = trials[event].min() - 0.4
     end_point = trials[event].max() + 1
 
@@ -305,7 +297,7 @@ def compute_neural_yield(clusters, channels, ROIs, firing_rate_threshold, presen
         channels_df = pd.DataFrame(filtered_data)
 
     channels_good = (
-        channels_df[channels_df["Beryl_merge"].isin(ROIs)]
+        channels_df[channels_df["Beryl_merge"].isin(C.ROIS)]
         .groupby("Beryl_merge")[["rawInd"]]
         .nunique()
         .reset_index()
@@ -351,7 +343,7 @@ def filter_spikes_by_cluster(spikes, clusters_ids, pid, pid_no_spikes):
     """
     spike_idx = np.isin(spikes['clusters'], clusters_ids)
     if np.sum(spike_idx) == 0:
-        print(f"{pid} — No spikes in selected ROIs.")
+        print(f"{pid} — No spikes in selected C.ROIS.")
         pid_no_spikes.append(pid)
         return spike_idx, False, pid_no_spikes
     return spike_idx, True, pid_no_spikes
@@ -452,17 +444,17 @@ def compute_fano_factors(spikes, spike_idx, clusters_ids, trials, event, event_e
     return df_all, df_all_conditions
 
 
-def save_results_to_parquet(df_all, df_conditions, neural_yield, datapath, align_event, trial_type, suffix="2025_part2"):
+def save_results_to_parquet(df_all, df_conditions, neural_yield, suffix="2025"):
     """
     Save result DataFrames to parquet files with standardized naming.
     """
-    ff_file = f'ibl_BWMLL_FFs_{align_event}_{trial_type}_{suffix}.parquet'
-    cond_file = f'ibl_BWMLL_FFs_{align_event}_{trial_type}_conditions_{suffix}.parquet'
-    yield_file = f'ibl_BWMLL_neural_yield_{align_event}_{trial_type}_{suffix}.parquet'
+    ff_file = C.DATAPATH / f'ibl_BWMLL_FFs_{C.ALIGN_EVENT}_{C.TRIAL_TYPE}_{suffix}.parquet'
+    cond_file = C.DATAPATH / f'ibl_BWMLL_FFs_{C.ALIGN_EVENT}_{C.TRIAL_TYPE}_conditions_{suffix}.parquet'
+    yield_file = C.DATAPATH / f'ibl_BWMLL_neural_yield_{C.ALIGN_EVENT}_{C.TRIAL_TYPE}_{suffix}.parquet'
 
-    df_all.to_parquet(os.path.join(datapath, ff_file), engine='pyarrow', compression='snappy')
-    df_conditions.to_parquet(os.path.join(datapath, cond_file), engine='pyarrow', compression='snappy')
-    neural_yield.to_parquet(os.path.join(datapath, yield_file), engine='pyarrow', compression='snappy')
+    df_all.to_parquet(ff_file, engine='pyarrow', compression='snappy')
+    df_conditions.to_parquet(cond_file, engine='pyarrow', compression='snappy')
+    neural_yield.to_parquet( yield_file, engine='pyarrow', compression='snappy')
 
     print(" Results saved successfully:")
     print(f"    • FF (overall):     {ff_file}")
@@ -471,40 +463,32 @@ def save_results_to_parquet(df_all, df_conditions, neural_yield, datapath, align
 
 
 
-# 设置日志文件保存路径
-log_file_path = os.path.join(datapath, f"error_log_FF_compute_{align_event}_{trial_type}.log")
+log_file_path = C.DATAPATH / f"error_log_FF_compute_{C.ALIGN_EVENT}_{C.TRIAL_TYPE}.log"
 
-# 配置日志记录器
 logging.basicConfig(
     filename=log_file_path,
-    filemode='w',  # 每次运行时覆盖旧日志；如需追加可用 'a'
+    filemode='w',  
     level=logging.ERROR,
     format='%(asctime)s - %(levelname)s - %(message)s'
 )
-processed_dir = Path(datapath) / "processed_pids"
+processed_dir = C.DATAPATH / "processed_pids"
 processed_dir.mkdir(exist_ok=True)
-
 
 
 if __name__ == "__main__":
     
     save_results = True
-    # clean_rts = True
     mean_subtraction = False
-    datapath = config.datapath
     clean_rt = True 
 
-    trials_table = load_and_prepare_trials(datapath, trial_type, event_list, clean_rt, rt_variable_name)
+    trials_table = load_and_prepare_trials(C.TRIAL_TYPE, C.EVENT_LIST, C.CLEAN_RT, C.RT_VARIABLE_NAME)
     
     if trials_table is None:
         print("Failed to load trials.")
 
     print(len(set(trials_table.eid)))
 
-    try:
-        recordings_filtered = pd.read_csv(os.path.join(datapath,'BWM_LL_release_afterQC_df.csv'))
-    except Exception as err:
-        print(f'errored: {err}')
+    recordings_filtered = read_table(C.DATAPATH / 'BWM_LL_release_afterQC_df.csv')
     #TODO: 为啥去掉了3个pids?
     # recordings_filtered = recordings_filtered[~recordings_filtered['pid'].isin(notget_pids)]
 
@@ -514,12 +498,9 @@ if __name__ == "__main__":
     no_iblsortor=[]
     pid_no_spikes=[]
 
-    # neural_yield_all = []
     list_ind = []
     all_pids_to_use = recordings_filtered['pid'].to_list()
-    # for index, row in recordings_filtered[0:300].iterrows():
     for index, row in recordings_filtered.iterrows():
-        
         #TODO: 确认之后，去掉那4个？
         pid = row['pid']
         if pid in ['57edc590-a53d-403c-9aab-d58ee51b6a24', 'daadb3f1-bef2-474e-a659-72922f3fcc5b', '61bb2bcd-37b4-4bcc-8f40-8681009a511a', 'ee2ce090-696a-40f5-8f29-7107339bf08e']:
@@ -538,34 +519,34 @@ if __name__ == "__main__":
         try:
             list_ind.append(index)
             eid, pname = one.pid2eid(pid)
-            trials, subject, sex, age_at_recording, sess_date = extract_mouse_info(trials_table,eid)
+            eid = str(eid)
+            trials, subject, sex, age_at_recording, sess_date = extract_mouse_info(trials_table, eid)
             spikes, clusters, channels, no_iblsortor = load_sorting_and_clusters(row, one, no_iblsortor)
 
-            event = map_event(align_event)
+            event = map_event()
 
-            clusters, spike_times_btw, spike_clusters = compute_cluster_metrics(spikes, clusters, trials, align_event, br)
+            clusters, spike_times_btw, spike_clusters = compute_cluster_metrics(spikes, clusters, trials, br)
 
 
             yield_table, clusters_ids, cluster_idx = compute_neural_yield(
-                                clusters, channels, ROIs, firing_rate_threshold,
-                                presence_ratio_threshold, pid, eid, subject, age_at_recording, br
+                                clusters, channels, C.ROIS, C.FIRING_RATE_THRESHOLD,
+                                C.PRESENCE_RATIO_THRESHOLD, pid, eid, subject, age_at_recording, br
                             )
             # neural_yield_all.append(yield_table)  
-
             spike_idx, has_valid_spikes, pid_no_spikes = filter_spikes_by_cluster(spikes, clusters_ids, pid, pid_no_spikes)
             if not has_valid_spikes:
                 continue
 
 
             df_this, df_conditions_this = compute_fano_factors(
-                spikes, spike_idx, clusters_ids, trials, event, event_epoch, bin_size,
-                eid, pid, age_at_recording, sex, subject, sess_date, trial_type,
+                spikes, spike_idx, clusters_ids, trials, event, C.EVENT_EPOCH, C.BIN_SIZE,
+                eid, pid, age_at_recording, sex, subject, sess_date, C.TRIAL_TYPE,
                 clusters, cluster_idx
             )
             # df_all.extend(df_this)
             # df_all_conditions.extend(df_conditions_this)
 
-            #2. 保存当前 pid 的中间结果
+            #2. save results for current pid
             df_pid = pd.concat(df_this, ignore_index=True)
             df_cond_pid = pd.concat(df_conditions_this, ignore_index=True)
 
@@ -573,11 +554,11 @@ if __name__ == "__main__":
             df_cond_pid.to_parquet(processed_dir / f"{pid}_ff_cond.parquet", engine='pyarrow', compression='snappy')
             yield_table.to_parquet(processed_dir / f"{pid}_yield.parquet", engine='pyarrow', compression='snappy')
 
-            # 3. 写一个 .done 文件作标记
+            # 3. mark it with a .done file
             done_file.touch()
 
         except Exception as err:
-            print(f"❌ Error on PID {pid} (index {index}): {err}")
+            print(f"Error on PID {pid} (index {index}): {err}")
             traceback.print_exc()
 
             logging.error(f"PID {pid} (index {index}) — {err}")
@@ -585,30 +566,28 @@ if __name__ == "__main__":
 
             continue
 
-# 所有应该处理的 pid
+# all pids expected
 expected_pids = set(recordings_filtered['pid'])
 
-# 实际处理完成（有 .done 文件的）
+# pids processed, with a .done file
 done_pids = {Path(f).stem for f in glob(str(processed_dir / "*.done"))}
 
-# 检查是否有缺失的 pid
+# any missing pid
 missing_pids = expected_pids - done_pids
 
 if missing_pids:
-    print(f"⚠️ Warning: {len(missing_pids)} PIDs missing results.")
+    print(f"Warning: {len(missing_pids)} PIDs missing results.")
     # print(f"Missing PIDs (sample): {list(missing_pids)[:5]}")
 else:
-    print("✅ All expected PIDs are present.")
+    print("All expected PIDs are present.")
 
-df_all = pd.concat([pd.read_parquet(f) for f in glob(str(processed_dir / "*_ff.parquet"))], ignore_index=True)
-df_all_conditions = pd.concat([pd.read_parquet(f) for f in glob(str(processed_dir / "*_ff_cond.parquet"))], ignore_index=True)
-neural_yield_all = pd.concat([pd.read_parquet(f) for f in glob(str(processed_dir / "*_yield.parquet"))], ignore_index=True)
+df_all = pd.concat([read_table(f) for f in glob(str(processed_dir / "*_ff.parquet"))], ignore_index=True)
+df_all_conditions = pd.concat([read_table(f) for f in glob(str(processed_dir / "*_ff_cond.parquet"))], ignore_index=True)
+neural_yield_all = pd.concat([read_table(f) for f in glob(str(processed_dir / "*_yield.parquet"))], ignore_index=True)
 
-# 5. 保存整体合并结果
+# 5. merge and save results
 if save_results:
     save_results_to_parquet(
-        df_all, df_all_conditions, neural_yield_all,
-        datapath, align_event, trial_type, suffix="2025_merged"
-    )
+        df_all, df_all_conditions, neural_yield_all, suffix="2025")
 
 # %%

@@ -1,0 +1,17 @@
+cluster_region,y_col,n_perm,formula,observed_val,observed_val_p,p_perm,ave_null_dist
+MOs,ff_quench_modulation,1000,ff_quench_modulation ~ age_years + C(cluster_region) + n_trials,0.08147935154894007,8.154776901198124e-06,0.5154845154845155,-0.0003471932633062982
+ACA,ff_quench_modulation,1000,ff_quench_modulation ~ age_years + C(cluster_region) + n_trials,0.004258510008965157,0.8583158405847027,0.952047952047952,-0.0015305415129192085
+CP,ff_quench_modulation,1000,ff_quench_modulation ~ age_years + C(cluster_region) + n_trials,-0.12041220737603398,0.0005027023612152584,0.2987012987012987,0.00843151947556322
+LS,ff_quench_modulation,1000,ff_quench_modulation ~ age_years + C(cluster_region) + n_trials,-0.007898814868888788,0.5750771677919914,0.8881118881118881,0.004039275894603035
+ACB,ff_quench_modulation,1000,ff_quench_modulation ~ age_years + C(cluster_region) + n_trials,-0.16698675870098972,5.281008621957345e-05,0.13486513486513488,0.007612335826101582
+mPFC,ff_quench_modulation,1000,ff_quench_modulation ~ age_years + C(cluster_region) + n_trials,0.08274409354783337,0.01959182200065586,0.4145854145854146,0.0012970645431655602
+ORB,ff_quench_modulation,1000,ff_quench_modulation ~ age_years + C(cluster_region) + n_trials,0.006775355152811403,0.7878080129987364,0.9470529470529471,0.00125497973109392
+OLF,ff_quench_modulation,1000,ff_quench_modulation ~ age_years + C(cluster_region) + n_trials,-0.07629038042323143,0.021659961527305645,0.24875124875124874,0.0013113099607511306
+VISp+pm,ff_quench_modulation,1000,ff_quench_modulation ~ age_years + C(cluster_region) + n_trials,0.01701172116562258,0.36100329654391206,0.8151848151848152,-0.0025639720643042814
+SCm,ff_quench_modulation,1000,ff_quench_modulation ~ age_years + C(cluster_region) + n_trials,-0.5637485326269532,4.425989500946379e-18,0.011988011988011988,0.006008205278922327
+MBm,ff_quench_modulation,1000,ff_quench_modulation ~ age_years + C(cluster_region) + n_trials,-0.21178152289233018,3.252780720187946e-21,0.03296703296703297,-0.002805032190494617
+PPC,ff_quench_modulation,1000,ff_quench_modulation ~ age_years + C(cluster_region) + n_trials,-0.01660385348279798,0.6593236593391096,0.8591408591408591,-0.004205351630492732
+CA1,ff_quench_modulation,1000,ff_quench_modulation ~ age_years + C(cluster_region) + n_trials,-0.10259821853626057,0.10616854464372658,0.43656343656343655,-0.0002223324428313249
+DG,ff_quench_modulation,1000,ff_quench_modulation ~ age_years + C(cluster_region) + n_trials,0.08151576793312137,0.006309959238238712,0.3786213786213786,0.005825008213893292
+LP,ff_quench_modulation,1000,ff_quench_modulation ~ age_years + C(cluster_region) + n_trials,-0.0026176920477881914,0.9068891239109713,0.9690309690309691,0.0024872351555932405
+PO,ff_quench_modulation,1000,ff_quench_modulation ~ age_years + C(cluster_region) + n_trials,-0.1894875417757584,4.5179802002809355e-14,0.027972027972027972,0.005404332904161394

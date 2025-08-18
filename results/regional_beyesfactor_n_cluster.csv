@@ -1,0 +1,17 @@
+metric,cluster_region,BF10,BF_conclusion
+n_cluster,MOs,0.1668382274683227,moderate H0
+n_cluster,ACA,0.6635810937033428,weak H0
+n_cluster,CP,0.3599570013390659,weak H0
+n_cluster,LS,0.4612508204545749,weak H0
+n_cluster,ACB,0.9001446676153017,weak H0
+n_cluster,mPFC,0.5633091624197945,weak H0
+n_cluster,ORB,0.8800516371978843,weak H0
+n_cluster,OLF,2.317121229768762,weak H1
+n_cluster,VISp+pm,0.1579231677137465,moderate H0
+n_cluster,SCm,0.1515969910235325,moderate H0
+n_cluster,MBm,0.1169477750166706,moderate H0
+n_cluster,PPC,3.0059198992653298,moderate H1
+n_cluster,CA1,0.2760841295831586,moderate H0
+n_cluster,DG,0.5397849809470764,weak H0
+n_cluster,LP,2.9160198999339904,weak H1
+n_cluster,PO,0.1741958774644066,moderate H0

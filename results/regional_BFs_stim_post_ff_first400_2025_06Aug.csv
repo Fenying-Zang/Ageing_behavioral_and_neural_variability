@@ -1,0 +1,17 @@
+cluster_region,metric,formula_full,BF10_age,BF10_age_category,BF10_region,mean_contrast,low_ci_contrast,high_ci_contrast,mean_age,low_ci_age,high_ci_age,age_ci_conclusion,contrast_ci_conclusion
+MOs,post_ff,log_post_ff ~ age_years + abs_contrast + n_trials ,[2343.49740531],strong H1,inconclusive,,,,,,,True,True
+ACA,post_ff,log_post_ff ~ age_years + abs_contrast + n_trials ,[0.07144819],strong H0,inconclusive,,,,,,,True,True
+CP,post_ff,log_post_ff ~ age_years + abs_contrast + n_trials ,[2372.43237125],strong H1,inconclusive,,,,,,,True,True
+LS,post_ff,log_post_ff ~ age_years + abs_contrast + n_trials ,[11277.79759593],strong H1,inconclusive,,,,,,,True,True
+ACB,post_ff,log_post_ff ~ age_years + abs_contrast + n_trials ,[6936.42141792],strong H1,inconclusive,,,,,,,True,True
+mPFC,post_ff,log_post_ff ~ age_years + abs_contrast + n_trials ,[2053.65437431],strong H1,inconclusive,,,,,,,True,True
+ORB,post_ff,log_post_ff ~ age_years + abs_contrast + n_trials ,[2.07319093],weak H1,inconclusive,,,,,,,True,True
+OLF,post_ff,log_post_ff ~ age_years + abs_contrast + n_trials ,[7.96454255],moderate H1,inconclusive,,,,,,,True,True
+VISp+pm,post_ff,log_post_ff ~ age_years + abs_contrast + n_trials ,[0.06426174],strong H0,inconclusive,,,,,,,True,True
+SCm,post_ff,log_post_ff ~ age_years + abs_contrast + n_trials ,[3.3391656e+26],strong H1,inconclusive,,,,,,,True,True
+MBm,post_ff,log_post_ff ~ age_years + abs_contrast + n_trials ,[6.52093657e+14],strong H1,inconclusive,,,,,,,True,True
+PPC,post_ff,log_post_ff ~ age_years + abs_contrast + n_trials ,[495193.33102629],strong H1,inconclusive,,,,,,,True,True
+CA1,post_ff,log_post_ff ~ age_years + abs_contrast + n_trials ,[5188.55970356],strong H1,inconclusive,,,,,,,True,True
+DG,post_ff,log_post_ff ~ age_years + abs_contrast + n_trials ,[0.20480992],moderate H0,inconclusive,,,,,,,True,True
+LP,post_ff,log_post_ff ~ age_years + abs_contrast + n_trials ,[1.26850884],weak H1,inconclusive,,,,,,,True,True
+PO,post_ff,log_post_ff ~ age_years + abs_contrast + n_trials ,[7.09014993e+11],strong H1,inconclusive,,,,,,,True,True

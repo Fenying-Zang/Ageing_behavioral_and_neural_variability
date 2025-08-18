@@ -1,0 +1,17 @@
+cluster_region,y_col,n_perm,formula,observed_val,observed_val_p,p_perm,ave_null_dist
+MOs,post_fr,1000,log_post_fr ~ age_years + C(cluster_region) + abs_contrast + n_trials,0.7240825339988692,2.0819089745389704e-30,0.008991008991008992,0.0035027210447892737
+ACA,post_fr,1000,log_post_fr ~ age_years + C(cluster_region) + abs_contrast + n_trials,-0.22381123437229009,0.008849900364941668,0.3936063936063936,-0.0008656396114588585
+CP,post_fr,1000,log_post_fr ~ age_years + C(cluster_region) + abs_contrast + n_trials,0.25257762352710683,0.043194853062659744,0.47152847152847155,-0.025282511112098362
+LS,post_fr,1000,log_post_fr ~ age_years + C(cluster_region) + abs_contrast + n_trials,0.4159763268023412,7.448185316177494e-12,0.04095904095904096,-0.0007050194975524451
+ACB,post_fr,1000,log_post_fr ~ age_years + C(cluster_region) + abs_contrast + n_trials,1.512746405135182,1.0213904652571568e-07,0.07092907092907093,0.10236709496249435
+mPFC,post_fr,1000,log_post_fr ~ age_years + C(cluster_region) + abs_contrast + n_trials,0.4181717955141363,0.011273914592857278,0.13686313686313686,0.002299698864381636
+ORB,post_fr,1000,log_post_fr ~ age_years + C(cluster_region) + abs_contrast + n_trials,0.2571690672007187,0.0037468613686143333,0.22577422577422576,-0.013432283872666102
+OLF,post_fr,1000,log_post_fr ~ age_years + C(cluster_region) + abs_contrast + n_trials,0.25335565609864197,0.006388521004925083,0.13886113886113885,0.006429693531981723
+VISp+pm,post_fr,1000,log_post_fr ~ age_years + C(cluster_region) + abs_contrast + n_trials,0.5377695234886962,2.339883640424323e-16,0.04795204795204795,-0.01546217873011541
+SCm,post_fr,1000,log_post_fr ~ age_years + C(cluster_region) + abs_contrast + n_trials,0.6645888546609777,1.3908735461337408e-05,0.06793206793206794,0.006615816945437379
+MBm,post_fr,1000,log_post_fr ~ age_years + C(cluster_region) + abs_contrast + n_trials,0.14124096994019958,0.003066043125090174,0.39760239760239763,0.00946900655458357
+PPC,post_fr,1000,log_post_fr ~ age_years + C(cluster_region) + abs_contrast + n_trials,-0.02829100337726822,0.7644303948698502,0.9120879120879121,0.003165641191957993
+CA1,post_fr,1000,log_post_fr ~ age_years + C(cluster_region) + abs_contrast + n_trials,0.7196333346453475,8.22829313304946e-12,0.01898101898101898,0.006764565910998606
+DG,post_fr,1000,log_post_fr ~ age_years + C(cluster_region) + abs_contrast + n_trials,0.5616158522513558,4.0002757747241645e-11,0.04795204795204795,0.01731692050928408
+LP,post_fr,1000,log_post_fr ~ age_years + C(cluster_region) + abs_contrast + n_trials,-0.5620717886462999,4.891653067388323e-43,0.000999000999000999,-0.006020549953109396
+PO,post_fr,1000,log_post_fr ~ age_years + C(cluster_region) + abs_contrast + n_trials,-0.2211634441674572,2.8945313473084875e-07,0.40559440559440557,-0.007269893249100672

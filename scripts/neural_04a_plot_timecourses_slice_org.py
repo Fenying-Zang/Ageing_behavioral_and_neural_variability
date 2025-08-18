@@ -11,17 +11,21 @@ import figrid as fg
 import seaborn as sns
 from ibl_style.utils import MM_TO_INCH
 from ibl_style.style import figure_style
-from utils.config import datapath, figpath, align_event, trial_type, ROIs, palette,palette5, age_group_threshold, tolerance
-from utils.plot_utils import create_slice_org_axes
+import config as C
+from scripts.utils.plot_utils import create_slice_org_axes
+from scripts.utils.io import read_table
+
 
 def load_timecourse_data(df_path):
     """
     Load df_all_conditions containing FF and FR timecourses.
     """
-    return pd.read_parquet(df_path)
+    return read_table(df_path)
+
 
 def get_suffix(mean_subtraction):
     return 'meansub' if mean_subtraction else ''
+
 
 def plot_time_courses_pooled(df, y_col='frs', estimator='mean',
                                 granularity='neuron_level',errorbar = ('ci', 95),
@@ -40,14 +44,14 @@ def plot_time_courses_pooled(df, y_col='frs', estimator='mean',
     sns.lineplot(
         data=df, x='timepoints', y=y_col,
         estimator=estimator, 
-        hue='age_group', palette=palette, hue_order=['young','old'],
-       errorbar=errorbar, legend=False, ax=ax #errorbar=("pi",50)
+        hue='age_group', palette=C.PALETTE, hue_order=['young','old'],
+       errorbar=errorbar, legend=False, ax=ax 
     )
 
     ax.text(0.8, 0.78, f'{num_datapoints.get("old", 0)} old', transform=ax.transAxes,
-            font="Arial", fontsize=6, c=palette['old'])
+            font="Arial", fontsize=6, c=C.PALETTE['old'])
     ax.text(0.8, 0.95, f'{num_datapoints.get("young", 0)} young', transform=ax.transAxes,
-            font="Arial", fontsize=6, c=palette['young'])
+            font="Arial", fontsize=6, c=C.PALETTE['young'])
 
     ax.axvline(x=0,  lw=0.5, alpha=0.8, c='gray')
     ax.axvspan(-0.1, 0, facecolor='gray', alpha=0.1)
@@ -62,11 +66,10 @@ def plot_time_courses_pooled(df, y_col='frs', estimator='mean',
     plt.tight_layout()
 
     if save:
-        fname = f"Omnibus_group_{granularity}_{get_suffix(mean_subtraction)}_{y_col}_{estimator}_timecourse_{align_event}.pdf"
-        fig.savefig(os.path.join(figpath, fname), dpi=300)
+        fname = f"Omnibus_group_{granularity}_{get_suffix(mean_subtraction)}_{y_col}_{estimator}_timecourse_{C.ALIGN_EVENT}.pdf"
+        fig.savefig(os.path.join(C.FIGPATH, fname), dpi=300)
 
     plt.show()
-
 
 
 def plot_time_courses_by_region(df, y_col='frs', estimator='mean',errorbar = ('ci', 95),
@@ -75,7 +78,7 @@ def plot_time_courses_by_region(df, y_col='frs', estimator='mean',errorbar = ('c
     fig, axs = create_slice_org_axes(fg, MM_TO_INCH)
     figure_style()
 
-    for region in ROIs:
+    for region in C.ROIS:
         ax = axs[region]
         sub_df = df[df['cluster_region'] == region]
         if sub_df.empty:
@@ -87,21 +90,21 @@ def plot_time_courses_by_region(df, y_col='frs', estimator='mean',errorbar = ('c
             sub_df = agg_df  # 只保留 collapsed 后的 summary 数据
 
         # Count datapoints at time zero
-        mydf_temp = sub_df[np.abs(sub_df['timepoints']) < tolerance]
+        mydf_temp = sub_df[np.abs(sub_df['timepoints']) < C.TOLERANCE]
         num_datapoints = mydf_temp.groupby('age_group')['uuids'].nunique()
 
         # Plot timecourse
         sns.lineplot(data=sub_df, x='timepoints', y=y_col, estimator=estimator,
                      hue='age_group', hue_order=['young', 'old'], ax=ax,
-                     palette=palette, errorbar=errorbar, legend=False)
+                     palette=C.PALETTE, errorbar=errorbar, legend=False)
 
         # Annotate sample size
         if 'old' in num_datapoints:
             ax.text(0.7, 0.84, f"{num_datapoints['old']}", transform=ax.transAxes,
-                    fontsize=6, color=palette['old'])
+                    fontsize=6, color=C.PALETTE['old'])
         if 'young' in num_datapoints:
             ax.text(0.7, 1.0, f"{num_datapoints['young']}", transform=ax.transAxes,
-                    fontsize=6, color=palette['young'])
+                    fontsize=6, color=C.PALETTE['young'])
 
         # Visual aids
         ax.axvline(x=0, lw=0.5, alpha=0.8, c='gray')
@@ -120,50 +123,51 @@ def plot_time_courses_by_region(df, y_col='frs', estimator='mean',errorbar = ('c
 
     # Final figure settings
     fig.suptitle(f'{granularity} {estimator} {y_col} time course', fontsize=8)
-    if align_event == 'stim':
+    if C.ALIGN_EVENT == 'stim':
         fig.supxlabel('Time from stimulus onset (s)', fontsize=8).set_y(0.35)
     else:
         fig.supxlabel('Time from movement onset (s)', fontsize=8).set_y(0.35)
 
     if save:
-        fig.savefig(os.path.join(figpath, f"Slice_org_{get_suffix(mean_subtraction)}_{granularity}_{y_col}_{estimator}_timecourse_{align_event}.pdf"), dpi=300)
+        fig.savefig(os.path.join(C.FIGPATH, f"Slice_org_{get_suffix(mean_subtraction)}_{granularity}_{y_col}_{estimator}_timecourse_{C.ALIGN_EVENT}.pdf"), dpi=300)
     plt.show()
 
 
-if __name__ == "__main__":
-
-    mean_subtraction = False #TODO:
+def main(mean_subtraction=False):
     if mean_subtraction:
         y_FF_col = 'FFs_residuals'
         y_fr_col = 'frs_residuals'
-        df_cond_path = datapath / f"ibl_BWMLL_FFs_{align_event}_{trial_type}_2025_merged.parquet"
+        df_cond_path = C.DATAPATH / f"ibl_BWMLL_FFs_{C.ALIGN_EVENT}_{C.TRIAL_TYPE}_2025_merged.parquet"
     else:
         y_FF_col = 'FFs'
         y_fr_col = 'frs'
-        df_cond_path = datapath / f"ibl_BWMLL_FFs_{align_event}_{trial_type}_conditions_2025_merged.parquet"
+        df_cond_path = C.DATAPATH / f"ibl_BWMLL_FFs_{C.ALIGN_EVENT}_{C.TRIAL_TYPE}_conditions_2025_merged.parquet"
 
     print(f"Loading {get_suffix(mean_subtraction)} df_all_conditions...")
     df_cond = load_timecourse_data(df_cond_path)
-    df_cond['age_group'] = df_cond['mouse_age'].map(lambda x: 'old' if x > age_group_threshold else 'young')
+    df_cond['age_group'] = df_cond['mouse_age'].map(lambda x: 'old' if x > C.AGE_GROUP_THRESHOLD else 'young')
 
-    # if mean_subtraction == False:
     print(f"Plotting {get_suffix(mean_subtraction)} pooled frs time courses...")
     plot_time_courses_pooled(df_cond, y_col=y_fr_col, estimator='mean',
-                                    granularity='neuron_level',errorbar = ('ci', 95),
+                                    granularity='neuron_level', errorbar=('ci', 95),
                                     save=True, mean_subtraction=mean_subtraction)
 
     print(f"Plotting {get_suffix(mean_subtraction)} frs time courses...")
     plot_time_courses_by_region(df_cond, y_col=y_fr_col, estimator='mean',
-                                granularity='neuron_level',errorbar = ('ci', 95), save=True, mean_subtraction=mean_subtraction)
+                                granularity='neuron_level', errorbar=('ci', 95), 
+                                save=True, mean_subtraction=mean_subtraction)
     
     print(f"Plotting {get_suffix(mean_subtraction)} pooled FFs time courses...")
     plot_time_courses_pooled(df_cond, y_col=y_FF_col, estimator='mean',
-                                    granularity='neuron_level',errorbar = ('ci', 95),
+                                    granularity='neuron_level', errorbar=('ci', 95),
                                     save=True, mean_subtraction=mean_subtraction)
 
     print(f"Plotting {get_suffix(mean_subtraction)} FFs time courses...")
     plot_time_courses_by_region(df_cond, y_col=y_FF_col, estimator='mean',
-                                granularity='neuron_level',errorbar = ('ci', 95), save=True, mean_subtraction=mean_subtraction)
+                                granularity='neuron_level', errorbar=('ci', 95), 
+                                save=True, mean_subtraction=mean_subtraction)
 
 
-# %%
+if __name__ == "__main__":
+
+    main(mean_subtraction=True)

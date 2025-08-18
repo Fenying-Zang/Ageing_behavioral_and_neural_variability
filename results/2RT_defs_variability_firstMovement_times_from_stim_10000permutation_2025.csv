@@ -1,0 +1,4 @@
+rt_variable,y_var,n_perm,formula,observed_val,observed_val_p,p_perm,ave_null_dist
+firstMovement_times_from_stim,mad_rt,10000,mad_rt ~ age_years,0.04082945691224157,8.620899122091689e-10,9.999000099990002e-05,0.000104195699756115
+firstMovement_times_from_stim,cv_rt,10000,cv_rt ~ age_years,-0.05531574208789237,0.11485288686860938,0.1161883811618838,0.0002842342256680982
+firstMovement_times_from_stim,sd_log_rt,10000,sd_log_rt ~ age_years,0.1302508961250549,1.6079508153583042e-08,9.999000099990002e-05,0.00031534977514738625

@@ -5,6 +5,8 @@ from datetime import datetime
 from scipy.stats import variation
 from scipy import stats
 from tqdm import tqdm
+import json
+from one.alf import spec
 
 def create_trials_table(eids,one):
     """ 
@@ -117,7 +119,7 @@ def fit_psychfunc(df):
 
     return df2
 
-def filter_trials(trials_df, exclude_nan_event_trials=True, trial_type='first400', event_list=None, 
+def filter_trials(trials_df, exclude_nan_event_trials=True, trial_type ='first400', event_list=None, 
                   clean_rt=True, rt_variable=None,rt_cutoff=None):
     # mask nan values; pick first 400 trials; rt cutoff 
     if exclude_nan_event_trials == True:
@@ -126,9 +128,11 @@ def filter_trials(trials_df, exclude_nan_event_trials=True, trial_type='first400
     if trial_type == 'first400':
         # groupby subject, pick only the first 400 trials 
         trials_df = trials_df.groupby('eid').head(400).reset_index(drop=True)
+    elif trial_type == 'all':
+        trials_df = trials_df.reset_index(drop=True)
     trials_df['rt_raw'] = trials_df[rt_variable].copy()
     trials_df['rt'] = clean_rts(trials_df[rt_variable], cutoff=rt_cutoff)    
-    if clean_rt == True:# remove RTs that sit outside the cutoff window 
+    if clean_rt:# remove RTs that sit outside the cutoff window 
         trials_df = trials_df[~trials_df['rt'].isna()]
     return trials_df
 
@@ -254,3 +258,72 @@ def fit_psychometric_paras(data, easy_trials=False,split_type='block'):
     split_fits['abs_bias'] = split_fits['bias'].abs()
     split_fits['mean_lapse'] = (split_fits['lapsehigh']+split_fits['lapselow'])/2
     return split_fits
+
+import json
+from one.alf import spec
+def filter_video_data(one, eids, camera='left', min_video_qc='FAIL', min_dlc_qc='FAIL'):
+    """
+    Filters sessions for which video and/or DLC data passes a given QC threshold for a selected camera.
+
+    Parameters
+    ----------
+    one: one.api.ONE
+        Instance to be used to connect to local or remote database.
+    eids: list or str
+        List of session UUIDs to filter.
+    camera: {'left', 'right', 'body'}
+        Camera for which to filter QC. Default is 'left'.
+    min_video_qc: {'CRITICAL', 'FAIL', 'WARNING', 'PASS', 'NOT_SET'} or None
+        Minimum video QC threshold for a session to be retained. Default is 'FAIL'.
+    min_dlc_qc: {'CRITICAL', 'FAIL', 'WARNING', 'PASS', 'NOT_SET'} or None
+        Minimum dlc QC threshold for a session to be retained. Default is 'FAIL'.
+
+    Returns
+    -------
+    list:
+        List of session UUIDs that pass both indicated QC thresholds for the selected camera.
+
+    Notes
+    -----
+    For the thresholds, note that 'NOT_SET' < 'PASS' < 'WARNING' < 'FAIL' < 'CRITICAL'
+    If a min_video_qc or min_dlc_qc is set to None, all sessions are retained for that criterion.
+    The intersection of sessions passing both criteria is returned.
+
+    """
+
+    # Check inputs
+    if isinstance(eids, str):
+        eids = [eids]
+    assert isinstance(eids, list), 'eids must be a list of session uuids'
+
+    # Load QC json from cache and restrict to desired sessions
+    # with open(one.cache_dir.joinpath('QC.json'), 'r') as f:
+    #     qc_cache = json.load(f)
+    # qc_list = one.get_details(eids, True)
+
+    qc_cache = {eid: one.get_details(eid, True)['extended_qc'] for eid in eids}
+    assert set(list(qc_cache.keys())) == set(eids), 'Not all eids found in cached QC.json'
+
+    # Passing video
+    if min_video_qc is None:
+        passing_vid = eids
+    else:
+        passing_vid = [
+            k for k, v in qc_cache.items() if
+            f'video{camera.capitalize()}' in v.keys() and
+            spec.QC[v[f'video{camera.capitalize()}']].value <= spec.QC[min_video_qc].value
+        ]
+
+    # Passing dlc
+    if min_dlc_qc is None:
+        passing_dlc = eids
+    else:
+        passing_dlc = [
+            k for k, v in qc_cache.items() if
+            f'dlc{camera.capitalize()}' in v.keys() and
+            spec.QC[v[f'dlc{camera.capitalize()}']].value <= spec.QC[min_dlc_qc].value
+        ]
+
+    # Combine
+    passing = list(set(passing_vid).intersection(set(passing_dlc)))
+    return passing

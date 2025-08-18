@@ -136,7 +136,7 @@ def enrich_df_new(conditionsplit=False, k=None, id=None, ff=None, fr=None, time_
         df_curr['signed_contrast'] = signed_contrast
 
     df_curr['n_trials']=n_trials  
-    df_curr['trials_type']= trial_type 
+    df_curr['trials_type']= trial_type
 
     return df_curr
 

@@ -1,0 +1,2 @@
+y_col,n_perm,formula,observed_val,observed_val_p,p_perm,ave_null_dist
+fr_delta_modulation,1000,fr_delta_modulation ~ age_years + C(cluster_region) + n_trials,0.3709215345287808,0.029399685255992982,0.27372627372627373,-0.01046783251430778

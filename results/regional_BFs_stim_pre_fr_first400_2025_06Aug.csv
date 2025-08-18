@@ -1,0 +1,17 @@
+cluster_region,metric,formula_full,BF10_age,BF10_age_category,BF10_region,mean_contrast,low_ci_contrast,high_ci_contrast,mean_age,low_ci_age,high_ci_age,age_ci_conclusion,contrast_ci_conclusion
+MOs,pre_fr,log_pre_fr ~ age_years + abs_contrast + n_trials ,[6.57136222e+44],strong H1,inconclusive,,,,,,,True,True
+ACA,pre_fr,log_pre_fr ~ age_years + abs_contrast + n_trials ,[0.76144191],weak H0,inconclusive,,,,,,,True,True
+CP,pre_fr,log_pre_fr ~ age_years + abs_contrast + n_trials ,[6.02740218e+09],strong H1,inconclusive,,,,,,,True,True
+LS,pre_fr,log_pre_fr ~ age_years + abs_contrast + n_trials ,[0.11717149],moderate H0,inconclusive,,,,,,,True,True
+ACB,pre_fr,log_pre_fr ~ age_years + abs_contrast + n_trials ,[52.36182709],strong H1,inconclusive,,,,,,,True,True
+mPFC,pre_fr,log_pre_fr ~ age_years + abs_contrast + n_trials ,[0.17260003],moderate H0,inconclusive,,,,,,,True,True
+ORB,pre_fr,log_pre_fr ~ age_years + abs_contrast + n_trials ,[0.18539962],moderate H0,inconclusive,,,,,,,True,True
+OLF,pre_fr,log_pre_fr ~ age_years + abs_contrast + n_trials ,[41.63589863],strong H1,inconclusive,,,,,,,True,True
+VISp+pm,pre_fr,log_pre_fr ~ age_years + abs_contrast + n_trials ,[1.40970125e+22],strong H1,inconclusive,,,,,,,True,True
+SCm,pre_fr,log_pre_fr ~ age_years + abs_contrast + n_trials ,[0.38740368],weak H0,inconclusive,,,,,,,True,True
+MBm,pre_fr,log_pre_fr ~ age_years + abs_contrast + n_trials ,[619047.3057876],strong H1,inconclusive,,,,,,,True,True
+PPC,pre_fr,log_pre_fr ~ age_years + abs_contrast + n_trials ,[0.29989414],moderate H0,inconclusive,,,,,,,True,True
+CA1,pre_fr,log_pre_fr ~ age_years + abs_contrast + n_trials ,[1.32082081e+12],strong H1,inconclusive,,,,,,,True,True
+DG,pre_fr,log_pre_fr ~ age_years + abs_contrast + n_trials ,[0.05150874],strong H0,inconclusive,,,,,,,True,True
+LP,pre_fr,log_pre_fr ~ age_years + abs_contrast + n_trials ,[1.43871248e+22],strong H1,inconclusive,,,,,,,True,True
+PO,pre_fr,log_pre_fr ~ age_years + abs_contrast + n_trials ,[0.10164944],moderate H0,inconclusive,,,,,,,True,True

@@ -5,16 +5,17 @@ import pandas as pd
 import numpy as np
 from sklearn.linear_model import LinearRegression
 
-from utils.config import datapath, align_event, trial_type, PRE_TIME, POST_TIME, tolerance
+import config as C
+from scripts.utils.io import read_table
 
 
 def load_timecourse_data(df_path):
     """
     Load df_all_conditions containing FF and FR timecourses.
     """
-    return pd.read_parquet(df_path)
+    return read_table(df_path)
 
-def extract_pre_post_values(df, pre_time=PRE_TIME, post_time=POST_TIME, tol=tolerance):
+def extract_pre_post_values(df, pre_time=C.PRE_TIME, post_time=C.POST_TIME, tol=C.TOLERANCE):
     """
     Extract pre/post values at specified timepoints for FF and FR.
     Assumes df has one row per neuron × contrast × timepoint.
@@ -53,7 +54,7 @@ def extract_pre_post_values(df, pre_time=PRE_TIME, post_time=POST_TIME, tol=tole
             })
     return pd.DataFrame(metrics)
 
-def extract_pre_post_from_df_meansub(df, pre_time=PRE_TIME, post_time=POST_TIME, tol=tolerance):
+def extract_pre_post_from_df_meansub(df, pre_time=C.PRE_TIME, post_time=C.POST_TIME, tol=C.TOLERANCE):
     """
     Extract pre/post FF and FR from df_all (mean-subtracted version), no contrast splitting.
     """
@@ -117,27 +118,27 @@ def compute_modulation_index(df, metric_col):
 
 if __name__ == "__main__":
 
-    df_cond_path = datapath / f"ibl_BWMLL_FFs_{align_event}_{trial_type}_conditions_2025_merged.parquet"
-    df_meansub_path = datapath / f"ibl_BWMLL_FFs_{align_event}_{trial_type}_2025_merged.parquet"
-    out_path_cond = datapath / "neural_metrics_summary_conditions_merged.parquet"
-    out_path_meansub = datapath / "neural_metrics_summary_meansub_merged.parquet"
+    df_cond_path = C.DATAPATH / f"ibl_BWMLL_FFs_{C.ALIGN_EVENT}_{C.TRIAL_TYPE}_conditions_2025.parquet"
+    df_meansub_path = C.DATAPATH / f"ibl_BWMLL_FFs_{C.ALIGN_EVENT}_{C.TRIAL_TYPE}_2025.parquet"
+    out_path_cond = C.DATAPATH / "neural_metrics_summary_conditions.parquet"
+    out_path_meansub = C.DATAPATH / "neural_metrics_summary_meansub.parquet"
 
 
-    # print("Loading df_all_conditions...")
-    # df_cond = load_timecourse_data(df_cond_path)
-    # print("Extracting condition-based metrics...")
-    # df_summary = extract_pre_post_values(df_cond)
+    print("Loading df_all_conditions...")
+    df_cond = load_timecourse_data(df_cond_path)
+    print("Extracting condition-based metrics...")
+    df_summary = extract_pre_post_values(df_cond)
 
-    # print("Computing contrast modulation indices...")
-    # ff_mod = compute_modulation_index(df_summary, 'ff_quench')
-    # fr_mod = compute_modulation_index(df_summary, 'fr_delta')
+    print("Computing contrast modulation indices...")
+    ff_mod = compute_modulation_index(df_summary, 'ff_quench')
+    fr_mod = compute_modulation_index(df_summary, 'fr_delta')
 
-    # print("Merging condition-based results...")
-    # final_cond = df_summary.merge(ff_mod, on=['uuids', 'cluster_region', 'mouse_age', 'session_pid'], how='left')
-    # final_cond = final_cond.merge(fr_mod, on=['uuids', 'cluster_region', 'mouse_age', 'session_pid'], how='left')
+    print("Merging condition-based results...")
+    final_cond = df_summary.merge(ff_mod, on=['uuids', 'cluster_region', 'mouse_age', 'session_pid'], how='left')
+    final_cond = final_cond.merge(fr_mod, on=['uuids', 'cluster_region', 'mouse_age', 'session_pid'], how='left')
 
-    # print(f"Saving to {out_path_cond}")
-    # final_cond.to_parquet(out_path_cond, index=False)
+    print(f"Saving to {out_path_cond}")
+    final_cond.to_parquet(out_path_cond, index=False)
 
     print("\nLoading df_all (mean-subtracted FF)...")
     df_meansub = load_timecourse_data(df_meansub_path)

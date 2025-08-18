@@ -1,0 +1,17 @@
+cluster_region,metric,formula_full,BF10_age,BF10_age_category,BF10_region,mean_contrast,low_ci_contrast,high_ci_contrast,mean_age,low_ci_age,high_ci_age,age_ci_conclusion
+MOs,ff_quench,ff_quench ~ age_years  + n_trials ,[15.18150053],strong H1,inconclusive,,,,,,,True
+ACA,ff_quench,ff_quench ~ age_years  + n_trials ,[0.54152538],weak H0,inconclusive,,,,,,,True
+CP,ff_quench,ff_quench ~ age_years  + n_trials ,[0.15012716],moderate H0,inconclusive,,,,,,,True
+LS,ff_quench,ff_quench ~ age_years  + n_trials ,[694.05231893],strong H1,inconclusive,,,,,,,True
+ACB,ff_quench,ff_quench ~ age_years  + n_trials ,[3.17254678],moderate H1,inconclusive,,,,,,,True
+mPFC,ff_quench,ff_quench ~ age_years  + n_trials ,[0.2394615],moderate H0,inconclusive,,,,,,,True
+ORB,ff_quench,ff_quench ~ age_years  + n_trials ,[0.28034031],moderate H0,inconclusive,,,,,,,True
+OLF,ff_quench,ff_quench ~ age_years  + n_trials ,[1.12571377],weak H1,inconclusive,,,,,,,True
+VISp+pm,ff_quench,ff_quench ~ age_years  + n_trials ,[76.60674754],strong H1,inconclusive,,,,,,,True
+SCm,ff_quench,ff_quench ~ age_years  + n_trials ,[0.61924143],weak H0,inconclusive,,,,,,,True
+MBm,ff_quench,ff_quench ~ age_years  + n_trials ,[0.11988777],moderate H0,inconclusive,,,,,,,True
+PPC,ff_quench,ff_quench ~ age_years  + n_trials ,[0.17042327],moderate H0,inconclusive,,,,,,,True
+CA1,ff_quench,ff_quench ~ age_years  + n_trials ,[0.43981937],weak H0,inconclusive,,,,,,,True
+DG,ff_quench,ff_quench ~ age_years  + n_trials ,[0.1490386],moderate H0,inconclusive,,,,,,,True
+LP,ff_quench,ff_quench ~ age_years  + n_trials ,[3.56758462],moderate H1,inconclusive,,,,,,,True
+PO,ff_quench,ff_quench ~ age_years  + n_trials ,[0.10492405],moderate H0,inconclusive,,,,,,,True

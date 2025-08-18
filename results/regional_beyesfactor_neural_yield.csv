@@ -1,0 +1,17 @@
+metric,cluster_region,BF10,BF_conclusion
+neural_yield,MOs,0.3114026831588804,moderate H0
+neural_yield,ACA,16.089810318404894,strong H1
+neural_yield,CP,0.1687769004324945,moderate H0
+neural_yield,LS,4.557861786639823,moderate H1
+neural_yield,ACB,0.9675661029444322,weak H0
+neural_yield,mPFC,2.438589198246775,weak H1
+neural_yield,ORB,1.1838548222695402,weak H1
+neural_yield,OLF,1.813183579482057,weak H1
+neural_yield,VISp+pm,0.28895856896277955,moderate H0
+neural_yield,SCm,0.14846156489481627,moderate H0
+neural_yield,MBm,0.11473639390110582,moderate H0
+neural_yield,PPC,19.050594279204542,strong H1
+neural_yield,CA1,1.1924355982001857,weak H1
+neural_yield,DG,0.45850914278765387,weak H0
+neural_yield,LP,1.739453654788162,weak H1
+neural_yield,PO,0.1924467973303981,moderate H0

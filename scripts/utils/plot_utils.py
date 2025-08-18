@@ -12,25 +12,35 @@ from pathlib import Path
 
 def set_seaborn():
     """
-    Set seaborn style for plotting figures
+    Set seaborn style for plotting figures (print-friendly)
     """
-    sns.set(style="ticks", context="paper",
-            font="Arial",
-            rc={"font.size": 9,
-                "axes.titlesize": 9,
-                "axes.labelsize": 9,
-                "lines.linewidth": 1,
-                "xtick.labelsize": 7,
-                "ytick.labelsize": 7,
-                "savefig.transparent": False,
-                "savefig.dpi": 300,
-                "xtick.major.size": 2.5,
-                "ytick.major.size": 2.5,
-                "xtick.minor.size": 2,
-                "ytick.minor.size": 2,
-                })
+    sns.set_theme(
+        style="ticks", context="paper",
+        font="Arial",
+        rc={
+            "font.size": 9,
+            "axes.titlesize": 9,
+            "axes.labelsize": 9,
+            "lines.linewidth": 1,
+            "xtick.labelsize": 7,
+            "ytick.labelsize": 7,
+            "savefig.transparent": False,
+            "savefig.dpi": 300,
+            "xtick.major.size": 2.5,
+            "ytick.major.size": 2.5,
+            "xtick.minor.size": 2,
+            "ytick.minor.size": 2,
+            "axes.labelcolor": "black",
+            "text.color": "black",
+            "xtick.color": "black",
+            "ytick.color": "black",
+            "axes.edgecolor": "black",
+        }
+    )
     matplotlib.rcParams['pdf.fonttype'] = 42
     matplotlib.rcParams['ps.fonttype'] = 42
+    matplotlib.rcParams['font.family'] = 'Arial'
+
 
 def create_slice_org_axes(fg, MM_TO_INCH, fig=None):
     """

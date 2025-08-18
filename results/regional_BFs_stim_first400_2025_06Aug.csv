@@ -1,0 +1,17 @@
+cluster_region,metric,formula_full,BF10_age,BF10_age_category,BF10_region,mean_contrast,low_ci_contrast,high_ci_contrast,mean_age,low_ci_age,high_ci_age,age_ci_conclusion,contrast_ci_conclusion
+MOs,ff_quench_modulation_MOs,ff_quench_modulation ~ age_years  + n_trials,[0.47419019],weak H0,inconclusive,,,,,,,True,True
+ACA,ff_quench_modulation_ACA,ff_quench_modulation ~ age_years  + n_trials,[0.17576057],moderate H0,inconclusive,,,,,,,True,True
+CP,ff_quench_modulation_CP,ff_quench_modulation ~ age_years  + n_trials,[0.18404744],moderate H0,inconclusive,,,,,,,True,True
+LS,ff_quench_modulation_LS,ff_quench_modulation ~ age_years  + n_trials,[0.09314529],strong H0,inconclusive,,,,,,,True,True
+ACB,ff_quench_modulation_ACB,ff_quench_modulation ~ age_years  + n_trials,[0.54863808],weak H0,inconclusive,,,,,,,True,True
+mPFC,ff_quench_modulation_mPFC,ff_quench_modulation ~ age_years  + n_trials,[0.22164601],moderate H0,inconclusive,,,,,,,True,True
+ORB,ff_quench_modulation_ORB,ff_quench_modulation ~ age_years  + n_trials,[0.12152738],moderate H0,inconclusive,,,,,,,True,True
+OLF,ff_quench_modulation_OLF,ff_quench_modulation ~ age_years  + n_trials,[0.15881207],moderate H0,inconclusive,,,,,,,True,True
+VISp+pm,ff_quench_modulation_VISp+pm,ff_quench_modulation ~ age_years  + n_trials,[0.120894],moderate H0,inconclusive,,,,,,,True,True
+SCm,ff_quench_modulation_SCm,ff_quench_modulation ~ age_years  + n_trials,[6.73193549],moderate H1,inconclusive,,,,,,,True,True
+MBm,ff_quench_modulation_MBm,ff_quench_modulation ~ age_years  + n_trials,[7.49785572],moderate H1,inconclusive,,,,,,,True,True
+PPC,ff_quench_modulation_PPC,ff_quench_modulation ~ age_years  + n_trials,[0.13215479],moderate H0,inconclusive,,,,,,,True,True
+CA1,ff_quench_modulation_CA1,ff_quench_modulation ~ age_years  + n_trials,[0.11602891],moderate H0,inconclusive,,,,,,,True,True
+DG,ff_quench_modulation_DG,ff_quench_modulation ~ age_years  + n_trials,[0.18924756],moderate H0,inconclusive,,,,,,,True,True
+LP,ff_quench_modulation_LP,ff_quench_modulation ~ age_years  + n_trials,[0.08617282],strong H0,inconclusive,,,,,,,True,True
+PO,ff_quench_modulation_PO,ff_quench_modulation ~ age_years  + n_trials,[1.49852817],weak H1,inconclusive,,,,,,,True,True

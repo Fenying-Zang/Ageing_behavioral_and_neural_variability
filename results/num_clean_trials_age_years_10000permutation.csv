@@ -1,0 +1,2 @@
+y_col,n_perm,formula,observed_val,observed_val_p,p_perm,ave_null_dist
+clean,10000,n_trials ~ age_years ,9.986111668167348,0.18564295204080217,0.1924807519248075,-0.0176549572059187
