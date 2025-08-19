@@ -35,16 +35,14 @@ from statsmodels.genmod.families import Gaussian
 from statsmodels.genmod.families import Gamma
 from statsmodels.genmod.families.links import Log
 
-from ibl_style.style import figure_style
+from scripts.utils.plot_utils import figure_style
 from ibl_style.utils import get_coords, MM_TO_INCH, double_column_fig
 import figrid as fg
 
 from scripts.utils.plot_utils import map_p_value
 from scripts.utils.data_utils import shuffle_labels_perm, bf_gaussian_via_pearson, interpret_bayes_factor
 import config as C
-#     C.DATAPATH, C.FIGPATH, palette, C.AGE_GROUP_THRESHOLD,
-#     n_permut_behavior, age2use,  # e.g., 'age_years'
-# )
+
 
 # =====================
 # Tunables (script-local)
@@ -55,8 +53,6 @@ FAMILY_FUNC = Gaussian()
 N_JOBS = 6
 SHUFFLING = 'labels1_global'
 SAVE_FIG = True
-RANDOM_STATE = 123
-
 
 # =====================
 # 1) Loading / preparing
@@ -68,8 +64,8 @@ def load_fit_params(split_type):
       ['eid', 'mouse_age', 'age_group'(opt), 'age_months'(opt), 'age_years'(opt)]
       + MEASURES
     """
-    csv = Path(C.DATAPATH) / f"{split_type}_fit_psy_paras_age_info_367sessions_2025.csv"
-    df = pd.read_csv(csv)
+    csv_file = C.RESULTSPATH / f"{split_type}_fit_psy_paras_age_info_367sessions_2025.csv"
+    df = pd.read_csv(csv_file)
     # Add/repair age columns & age_group if missing
     if 'mouse_age' in df.columns:
         if 'age_months' not in df.columns:
@@ -113,7 +109,7 @@ def _single_permutation(i, data, permuted_label, formula, family_func=Gamma(link
         return np.nan
 
 
-def run_permutation_test(data, age_labels,formula, family_func, shuffling, n_permut, n_jobs, random_state=RANDOM_STATE):
+def run_permutation_test(data, age_labels, formula, family_func, shuffling, n_permut, n_jobs, random_state=C.RANDOM_STATE):
     permuted_labels, _ = shuffle_labels_perm(
         labels1=age_labels, labels2=None, shuffling=shuffling,
         n_permut=n_permut, random_state=random_state, n_cores=min(4, n_jobs)
@@ -137,7 +133,7 @@ def get_or_compute_perm_results(split_type, df_in, measures_list=MEASURES,
     """
     Cache permutation results per split_type; one row per measure.
     """
-    out_csv = C.DATAPATH / f"{split_type}_shift_{C.AGE2USE}_{n_permut}permutation.csv"
+    out_csv = C.RESULTSPATH / f"{split_type}_shift_{C.AGE2USE}_{n_permut}permutation.csv"
     if out_csv.exists():
         return pd.read_csv(out_csv)
 
@@ -156,7 +152,7 @@ def get_or_compute_perm_results(split_type, df_in, measures_list=MEASURES,
             shuffling=SHUFFLING,
             n_permut=n_permut,
             n_jobs=N_JOBS,
-            random_state=RANDOM_STATE
+            random_state=C.RANDOM_STATE
         )
         print(f"[{split_type}] {measure}: β={observed:.4f}, p_perm={p_perm:.4f}")
         rows.append({

@@ -24,7 +24,7 @@ from statsmodels.genmod.families import Gaussian
 from statsmodels.genmod.families import Gamma
 from statsmodels.genmod.families.links import Log
 
-from ibl_style.style import figure_style
+from scripts.utils.plot_utils import figure_style
 from ibl_style.utils import get_coords, MM_TO_INCH, double_column_fig
 import figrid as fg
 
@@ -60,7 +60,7 @@ SHUFFLING = 'labels1_global'  # same as your other scripts
 # =====================
 # 2) Prepare data (filter + variability summary)
 # =====================
-def filter_for_rt(trials, rt_variable_name, exclude_nan_event_trials = True, clean_rt = True):
+def filter_for_rt(trials, rt_variable_name, exclude_nan_event_trials=True, clean_rt=True):
     """Apply your standard trial filtering for a given RT definition."""
     df = filter_trials(
         trials,
@@ -111,7 +111,7 @@ def make_variability_summary(filtered_df):
 # =====================
 # 3) Permutation testing
 # =====================
-def _single_permutation(i, data, permuted_label, formula, family_func=Gamma(link=Log())):
+def _single_permutation(i, data, permuted_label, formula, family_func):
     try:
         shuffled = data.copy()
         shuffled[C.AGE2USE] = permuted_label
@@ -147,11 +147,11 @@ def run_permutation_test(data: pd.DataFrame,
     return observed, observed_p, p_perm, valid_null
 
 
-def get_or_compute_perm_results(rt_variable_name, variability_summary, measures = MEASURES, n_permut = C.N_PERMUT_BEHAVIOR):
+def get_or_compute_perm_results(rt_variable_name, variability_summary, measures=MEASURES, n_permut=C.N_PERMUT_BEHAVIOR):
     """
     Cache permutation results per RT definition; one row per measure.
     """
-    out_csv = Path(C.DATAPATH) / f"2RT_defs_variability_{rt_variable_name},{n_permut}permutation_2025.csv"
+    out_csv = C.RESULTSPATH / f"2RT_defs_variability_{rt_variable_name}_{n_permut}permutation_2025.csv"
     if out_csv.exists():
         return pd.read_csv(out_csv)
 
@@ -291,11 +291,6 @@ def main(save_fig: bool = True):
 if __name__ == "__main__":
     main(save_fig=True)
 
-#%%
-# see old code below for reference
-
-
-
 
 
 
@@ -324,7 +319,7 @@ if __name__ == "__main__":
 
 #%%
 # #%%
-# from ibl_style.style import figure_style
+# from scripts.utils.plot_utils import figure_style
 # import figrid as fg
 # import pickle
 # import pandas as pd
@@ -343,7 +338,7 @@ if __name__ == "__main__":
 # from scripts.utils.plot_utils import set_seaborn, plot_psychometric, plot_chronometric
 # from scripts.utils.plot_utils import create_slice_org_axes, map_p_value
 # import figrid as fg
-# from ibl_style.style import figure_style
+# from scripts.utils.plot_utils import figure_style
 # from ibl_style.utils import MM_TO_INCH
 # from one.api import ONE
 # from scripts.utils.data_utils import shuffle_labels_perm,bf_gaussian_via_pearson,interpret_bayes_factor

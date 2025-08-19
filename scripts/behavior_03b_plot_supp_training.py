@@ -23,50 +23,50 @@ import matplotlib.pyplot as plt
 import scipy as sp
 from joblib import Parallel, delayed
 from tqdm import tqdm
-
 import figrid as fg
 from ibl_style.utils import get_coords, MM_TO_INCH, double_column_fig
-from ibl_style.style import figure_style
+from scripts.utils.plot_utils import figure_style
 
 from statsmodels.formula.api import glm
 from statsmodels.genmod.families import Gaussian
 from statsmodels.genmod.families import Gamma
 from statsmodels.genmod.families.links import Log
-from statsmodels.stats.multitest import multipletests
-
 from scripts.utils.permutation_test import plot_permut_test
-from scripts.utils.data_utils import shuffle_labels_perm, bf_gaussian_via_pearson, interpret_bayes_factor
-from scripts.utils.plot_utils import map_p_value
-import config as C
+from scripts.utils.data_utils import (shuffle_labels_perm, bf_gaussian_via_pearson, interpret_bayes_factor,
+                                      add_age_group, add_age_months, add_age_years)
+from scripts.utils.plot_utils import format_bf_annotation
 from scripts.utils.io import read_table
+from scripts.utils.stats_utils import single_permutation, run_permutation_test
 
+import config as C
 # =====================
-# Config (edit here)
+# Config 
 # =====================
-# C.DATAPATH = "../data"
-# C.FIGPATH = "../figures"
 TRAINING_FILE = "training_history_149subjs_2025_NEW.parquet"
 SAVE_FIGURES = True
 N_JOBS = 6
 SHUFFLING = "labels1_global"
 FAMILY_FUNC = Gaussian()
-# PALETTE = ["#78c679", "#2c7fb8"]  # green, blue
-# HUE_ORDER = ["young", "old"]
-RANDOM_STATE_BASE = 123 
+
 # =====================
 # 1. Load & Prepare data
 # =====================
 
+def prepare_training_table(df):
+    
+    """Add 'age_months' (=mouse_age/30), 'age_years' (=mouse_age/365), and 'age_group'; return a copy."""
 
-def prepare_training_table(df) :
     df = df.copy()
-    # age labels
-    df["age_group"] = df["mouse_age"].apply(lambda x: "old" if x > C.AGE_GROUP_THRESHOLD else "young")
-    df["age_months"] = df["mouse_age"] / 30
-    df["age_years"] = df["mouse_age"] / 365
+    df = add_age_months(df)
+    df = add_age_years(df)
+    df = add_age_group(df)
     return df
 
-def subset_for_criterion(df, criterion) :
+
+def subset_for_criterion(df, criterion):
+    
+    """Filter rows with valid offsets for a criterion ('first_recording' or 'get_trained'); return a copy."""
+
     if criterion == "first_recording":
         return df[~df["num_days_from_recording"].isna()].copy()
     elif criterion == "get_trained":
@@ -74,8 +74,12 @@ def subset_for_criterion(df, criterion) :
     else:
         raise ValueError(f"Unknown criterion: {criterion}")
     
+    
 def aggregate_until_criterion(df) :
-    """Compute per-mouse totals: days, sessions, trials, plus age bins."""
+    """
+    Aggregate per-mouse totals (num_days/sessions/trials) and attach age bins; 
+    input df already filtered to the criterion window.
+    """
     g = df.groupby("mouse_name")
     out = pd.DataFrame({
         "mouse_name": g.size().index,
@@ -94,7 +98,10 @@ def aggregate_until_criterion(df) :
 # =====================
 # Stats helpers
 # =====================
-def extract_stats(df, key_col, key_val) :
+def extract_stats(df, key_col, key_val):
+    """Grab observed beta and p-values for a row matching key_col==key_val; 
+    returns (beta, p_adj, p_perm, sig) with np.nan when missing."""
+
     row = df[df[key_col] == key_val]
     if row.empty:
         return np.nan, np.nan, np.nan, np.nan
@@ -105,59 +112,61 @@ def extract_stats(df, key_col, key_val) :
     return beta, p_adj, p_perm, sig
 
 
-def single_permutation(i, data, permuted_label, *,
-                       formula, family_func=Gamma(link=Log())) :
-    try:
-        shuffled = data.copy()
-        shuffled["age_years"] = permuted_label
-        model = glm(formula=formula, data=shuffled, family=family_func).fit()
-        return model.params["age_years"]
-    except Exception as e:
-        print(f"Permutation {i} failed: {e}")
-        return np.nan
+# def single_permutation(i, data, permuted_label, *,
+#                        formula, family_func=Gamma(link=Log())) :
+#     """Fit GLM once with permuted 'age_years'; return the fitted coefficient for 'age_years' (np.nan on failure)."""
+
+#     try:
+#         shuffled = data.copy()
+#         shuffled["age_years"] = permuted_label
+#         model = glm(formula=formula, data=shuffled, family=family_func).fit()
+#         return model.params["age_years"]
+#     except Exception as e:
+#         print(f"Permutation {i} failed: {e}")
+#         return np.nan
 
 
-def run_permutation_test(data, age_labels, *, formula,
-                          family_func=FAMILY_FUNC, shuffling = SHUFFLING,
-                          n_permut = C.N_PERMUT_BEHAVIOR, n_jobs = N_JOBS,
-                          random_state = RANDOM_STATE_BASE, plot = False):
-    
-    permuted_labels, _ = shuffle_labels_perm(
-        labels1=age_labels, labels2=None, shuffling=shuffling,
-        n_permut=n_permut, random_state=random_state, n_cores=n_jobs,
-    )
-    null_dist = Parallel(n_jobs=n_jobs)(
-        delayed(single_permutation)(i, data, permuted_labels[i], formula=formula, family_func=family_func)
-        for i in tqdm(range(n_permut))
-    )
-    null_dist = np.asarray(null_dist)
-    valid_null = null_dist[~np.isnan(null_dist)]
+# def run_permutation_test(data, age_labels, *, formula,
+#                           family_func=FAMILY_FUNC, shuffling=SHUFFLING,
+#                           n_permut=C.N_PERMUT_BEHAVIOR, n_jobs=N_JOBS,
+#                           random_state=C.RANDOM_STATE, plot=False):
+#     """Permutation test for the 'age_years' term in a GLM; returns (observed_beta, glm_p, perm_p, valid_null)."""
 
-    model_obs = glm(formula=formula, data=data, family=family_func).fit()
-    observed_val = model_obs.params["age_years"]
-    observed_val_p = model_obs.pvalues["age_years"]
-    p_perm = (np.sum(np.abs(valid_null) >= np.abs(observed_val)) + 1) / (len(valid_null) + 1)
+#     permuted_labels, _ = shuffle_labels_perm(
+#         labels1=age_labels, labels2=None, shuffling=shuffling,
+#         n_permut=n_permut, random_state=random_state, n_cores=n_jobs,
+#     )
+#     null_dist = Parallel(n_jobs=n_jobs)(
+#         delayed(single_permutation)(i, data, permuted_labels[i], formula=formula, family_func=family_func)
+#         for i in tqdm(range(n_permut))
+#     )
+#     null_dist = np.asarray(null_dist)
+#     valid_null = null_dist[~np.isnan(null_dist)]
 
-    if plot:
-        plot_permut_test(null_dist=valid_null, observed_val=observed_val, p=p_perm, mark_p=None)
+#     model_obs = glm(formula=formula, data=data, family=family_func).fit()
+#     observed_val = model_obs.params["age_years"]
+#     observed_val_p = model_obs.pvalues["age_years"]
+#     p_perm = (np.sum(np.abs(valid_null) >= np.abs(observed_val)) + 1) / (len(valid_null) + 1)
 
-    return observed_val, observed_val_p, p_perm, valid_null
+#     if plot:
+#         plot_permut_test(null_dist=valid_null, observed_val=observed_val, p=p_perm, mark_p=None)
+
+#     return observed_val, observed_val_p, p_perm, valid_null
 
 
-def fmt_age_annotation(beta, p_perm, data_for_bf,
-                       y_col):
+def fmt_age_annotation(beta, p_perm, data_for_bf, y_col):
+    """Compose two-line annotation text (β, p_perm, BF10, conclusion) for a panel; uses BF via pearson and plot_utils.format_bf_annotation."""
+
+    if "age_months" not in data_for_bf.columns:
+        data_for_bf = data_for_bf.copy()
+        data_for_bf = add_age_months(data_for_bf)
+
     BF = bf_gaussian_via_pearson(data_for_bf, y_col, "age_months")
     BF10 = BF["BF10"]
     conclusion = interpret_bayes_factor(BF10)
-    mapped = map_p_value(p_perm)
-    txt = (fr"$\beta_{{\mathrm{{age}}}} = {beta:.3f},\ p_{{\mathrm{{perm}}}} {mapped}$"
-            + "\n"
-            + (fr"$BF_{{10}} > 100$" if BF10 > 100 else fr"$BF_{{10}} = {BF10:.3f}$")
-            + f" {conclusion}"
-        )
-    return txt
-        
+    return format_bf_annotation(beta, p_perm, BF10, conclusion, beta_label="age", big_bf=100)
 
+        
 # =====================
 # Plotting
 # =====================
@@ -168,7 +177,7 @@ def build_figure_layout():
     width, height = fig.get_size_inches() / MM_TO_INCH
     yspans = get_coords(height, ratios=[0.7, 1, 1, 1], space=[15, 25, 25], pad=5, span=(0, 1))
     xspans2 = get_coords(width, ratios=[1, 1], space=25, pad=5, span=(0, 1))
-    xspans1 = get_coords(width, ratios=[1, 1, 1, 1], space=[15, 35, 15], pad=25, span=(0, 1))
+    xspans1 = get_coords(width, ratios=[1, 1, 1, 1], space=[18, 35, 18], pad=20, span=(0, 1))
     xspans3 = get_coords(width, ratios=[1, 1, 1, 1], space=[20, 20, 20], pad=5, span=(0, 1))
     xspans4 = get_coords(width, ratios=[1, 1, 1, 1], space=[20, 20, 20], pad=5, span=(0, 1))
 
@@ -193,6 +202,9 @@ def build_figure_layout():
 
 def plot_training_comparison_group_mean(training_table, *, x, alignment,
                                         palette=C.PALETTE, ax=None):
+    """Group-mean time course of 'perf_easy' by age_group for a given timeline x; draws cutoffs/labels; returns ax."""
+
+
     if x == "num_days_from_recording":
         data2plot = training_table[~training_table["num_days_from_recording"].isna()]
     elif x == "num_days_from_start":
@@ -228,6 +240,9 @@ def plot_training_comparison_group_mean(training_table, *, x, alignment,
 
 
 def scatter_with_age_line(ax, df, y_col):
+
+    """Scatter of y vs age_months; add regression line only if BF suggests moderate/strong H1; returns ax."""
+
     # Decide whether to show regression line based on Bayes factor strength
     BF = bf_gaussian_via_pearson(df, y_col, "age_months")
     conclusion = interpret_bayes_factor(BF["BF10"])
@@ -240,10 +255,14 @@ def scatter_with_age_line(ax, df, y_col):
 
 
 def plot_training_until_criterion(training_table, *, criterion, axes, stat_results):
+
+    """Three scatter subpanels (#days/#sessions/#trials) until a criterion; annotate with β/p_perm/BF; returns axes."""
+
     df = subset_for_criterion(training_table, criterion)
     df_ag = aggregate_until_criterion(df)
 
     measures = ["num_days", "num_sessions", "num_trials"]
+    y_lables = ["# days", "# sessions", "# trials"]
     for m, measure in enumerate(measures):
         ax = axes[m]
         beta, p_adj, p_perm, sig = extract_stats(stat_results, "y_var", measure)
@@ -254,14 +273,19 @@ def plot_training_until_criterion(training_table, *, criterion, axes, stat_resul
             ax.set_xlabel("Age (months)")
         else:
             ax.set_xlabel(None)
-        ax.set_ylabel(measure)
+        # ax.set_ylabel(measure)
+        ax.set_ylabel(y_lables[m])
     return axes
 
 
 def plot_performance_at_criterion(training_table, *, criterion, n_day_from_criterion,
                                   ax, stat_results):
+    
+    """Scatter of 'perf_easy' at specific day relative to criterion; annotate with β/p_perm/BF; returns ax."""
+
+
     df = training_table.copy()
-    df["age_months"] = df["mouse_age"] / 30
+    df = add_age_months(df)
 
     if criterion == "first_recording":
         data_before = df[df["num_days_from_recording"] == n_day_from_criterion]
@@ -286,8 +310,11 @@ def plot_performance_at_criterion(training_table, *, criterion, n_day_from_crite
 
 
 def plot_performance_from_start(training_table, *, n_day_from_start, ax, stat_results):
+    
+    """Scatter of 'perf_easy' on a fixed day from start (e.g., 20/50); annotate with β/p_perm/BF; returns ax."""
+
     df = training_table.copy()
-    df["age_months"] = df["mouse_age"] / 30
+    df = add_age_months(df)
     data2plot = df[df["num_days_from_start"] == n_day_from_start]
     beta, p_adj, p_perm, sig = extract_stats(stat_results, "n_day_from_start", n_day_from_start)
     txt = fmt_age_annotation(beta, p_perm, data2plot, "perf_easy")
@@ -304,119 +331,149 @@ def plot_performance_from_start(training_table, *, n_day_from_start, ax, stat_re
 # =====================
 
 def stats_until_each_criterion(training_table, *, criteria=("first_recording", "get_trained")) :
-    results = {}
-    for criter in criteria:
-        df = subset_for_criterion(training_table, criter)
-        df_ag = aggregate_until_criterion(df)
-        result_rows = []
-        for m, measure in enumerate(["num_days", "num_sessions", "num_trials"]):
-            formula = f"{measure} ~ age_years"
-            idxs = ~np.isnan(df_ag[measure])
-            df_fit = df_ag[idxs].reset_index(drop=True)
+    
+    """Permutation for totals until each criterion; caches a CSV under C.RESULTSPATH; returns a long stats table."""
+
+    filename = C.RESULTSPATH / f"training_until_each_criterion_{C.N_PERMUT_BEHAVIOR}permutation.csv"
+    if filename.exists():
+        all_results = read_table(filename)
+    else:
+        results = {}
+        for criter in criteria:
+            df = subset_for_criterion(training_table, criter)
+            df_ag = aggregate_until_criterion(df)
+            result_rows = []
+            for m, measure in enumerate(["num_days", "num_sessions", "num_trials"]):
+                formula = f"{measure} ~ age_years"
+                idxs = ~np.isnan(df_ag[measure])
+                df_fit = df_ag[idxs].reset_index(drop=True)
+                obs, obs_p, p_perm, valid_null = run_permutation_test(
+                    data=df_fit, age_labels=df_fit["age_years"].values, formula=formula,
+                    family_func=FAMILY_FUNC, shuffling=SHUFFLING, n_permut=C.N_PERMUT_BEHAVIOR,
+                    n_jobs=N_JOBS, random_state=C.RANDOM_STATE + m, plot=False
+                )
+                result_rows.append({
+                    "criterion": criter,
+                    "y_var": measure,
+                    "n_perm": C.N_PERMUT_BEHAVIOR,
+                    "formula": formula,
+                    "observed_val": obs,
+                    "observed_val_p": obs_p,
+                    "p_perm": p_perm,
+                    "ave_null_dist": valid_null.mean(),
+                    # "null_dist": valid_null,
+                })
+            res_df = pd.DataFrame(result_rows)
+            results[criter] = res_df
+        all_results = pd.concat(
+            [df.assign(criterion=criter) for criter, df in results.items()],
+            ignore_index=True
+        )
+        all_results.to_csv(filename, index=False)
+    return all_results
+
+
+def stats_perf_at_criterion(training_table, *, criteria=("first_recording", "get_trained")):
+    
+    """Permutation for 'perf_easy' at day 0 of each criterion; caches CSV; returns a stats table."""
+
+    filename = C.RESULTSPATH / f"training_perf_at_criterion_{C.N_PERMUT_BEHAVIOR}permutation.csv"
+    if filename.exists():
+        df = read_table(filename)
+    else:
+        rows = []
+        for criter in criteria:
+            if criter == "first_recording":
+                data0 = training_table[training_table["num_days_from_recording"] == 0]
+            else:
+                data0 = training_table[training_table["num_days_from_trained"] == 0]
+            data0 = data0[~np.isnan(data0["perf_easy"])].reset_index(drop=True)
             obs, obs_p, p_perm, valid_null = run_permutation_test(
-                data=df_fit, age_labels=df_fit["age_years"].values, formula=formula,
+                data=data0, age_labels=data0["age_years"].values, formula="perf_easy ~ age_years",
                 family_func=FAMILY_FUNC, shuffling=SHUFFLING, n_permut=C.N_PERMUT_BEHAVIOR,
-                n_jobs=4, random_state=100 + m, plot=False
+                n_jobs=N_JOBS, random_state=C.RANDOM_STATE, plot=False
             )
-            result_rows.append({
+            rows.append({
                 "criterion": criter,
-                "y_var": measure,
+                "y_var": "perf_easy",
                 "n_perm": C.N_PERMUT_BEHAVIOR,
-                "formula": formula,
+                "formula": "perf_easy ~ age_years",
                 "observed_val": obs,
                 "observed_val_p": obs_p,
                 "p_perm": p_perm,
                 "ave_null_dist": valid_null.mean(),
-                "null_dist": valid_null,
+                # "null_dist": valid_null,
             })
-        res_df = pd.DataFrame(result_rows)
-        reject, p_corr, _, _ = multipletests(res_df["p_perm"], alpha=0.05, method="fdr_bh")
-        res_df["p_corrected"] = p_corr
-        res_df["reject"] = reject
-        results[criter] = res_df
-    return results
-
-
-def stats_perf_at_criterion(training_table: pd.DataFrame, *, criteria=("first_recording", "get_trained")) -> pd.DataFrame:
-    rows = []
-    for criter in criteria:
-        if criter == "first_recording":
-            data0 = training_table[training_table["num_days_from_recording"] == 0]
-        else:
-            data0 = training_table[training_table["num_days_from_trained"] == 0]
-        data0 = data0[~np.isnan(data0["perf_easy"])].reset_index(drop=True)
-        obs, obs_p, p_perm, valid_null = run_permutation_test(
-            data=data0, age_labels=data0["age_years"].values, formula="perf_easy ~ age_years",
-            family_func=FAMILY_FUNC, shuffling=SHUFFLING, n_permut=C.N_PERMUT_BEHAVIOR,
-            n_jobs=4, random_state=RANDOM_STATE_BASE, plot=False
-        )
-        rows.append({
-            "criterion": criter,
-            "y_var": "perf_easy",
-            "n_perm": C.N_PERMUT_BEHAVIOR,
-            "formula": "perf_easy ~ age_years",
-            "observed_val": obs,
-            "observed_val_p": obs_p,
-            "p_perm": p_perm,
-            "ave_null_dist": valid_null.mean(),
-            "null_dist": valid_null,
-        })
-    return pd.DataFrame(rows)
+        df = pd.DataFrame(rows)
+        df.to_csv(filename, index=False)
+    return df
 
 
 def stats_perf_from_start(training_table, *, days_from_start=(20, 50)) :
-    rows = []
-    for day in days_from_start:
-        data = training_table[training_table["num_days_from_start"] == day]
-        data = data[~np.isnan(data["perf_easy"])].reset_index(drop=True)
-        obs, obs_p, p_perm, valid_null = run_permutation_test(
-            data=data, age_labels=data["age_years"].values, formula="perf_easy ~ age_years",
-            family_func=FAMILY_FUNC, shuffling=SHUFFLING, n_permut=C.N_PERMUT_BEHAVIOR,
-            n_jobs=4, random_state=RANDOM_STATE_BASE, plot=False
-        )
-        rows.append({
-            "n_day_from_start": day,
-            "y_var": "perf_easy",
-            "n_perm": C.N_PERMUT_BEHAVIOR,
-            "formula": "perf_easy ~ age_years",
-            "observed_val": obs,
-            "observed_val_p": obs_p,
-            "p_perm": p_perm,
-            "ave_null_dist": valid_null.mean(),
-            "null_dist": valid_null,
-        })
-    df = pd.DataFrame(rows)
-    reject, p_corr, _, _ = multipletests(df["p_perm"], alpha=0.05, method="fdr_bh")
-    df["p_corrected"] = p_corr
-    df["reject"] = reject
+    
+    """Permutation for 'perf_easy' on selected training days; caches CSV; returns a stats table."""
+
+    filename = C.RESULTSPATH / f"training_perf_from_start_{C.N_PERMUT_BEHAVIOR}permutation.csv"
+    if filename.exists():
+        df = read_table(filename)
+    else:
+        rows = []
+        for day in days_from_start:
+            data = training_table[training_table["num_days_from_start"] == day]
+            data = data[~np.isnan(data["perf_easy"])].reset_index(drop=True)
+            obs, obs_p, p_perm, valid_null = run_permutation_test(
+                data=data, age_labels=data["age_years"].values, formula="perf_easy ~ age_years",
+                family_func=FAMILY_FUNC, shuffling=SHUFFLING, n_permut=C.N_PERMUT_BEHAVIOR,
+                n_jobs=4, random_state=C.RANDOM_STATE, plot=False
+            )
+            rows.append({
+                "n_day_from_start": day,
+                "y_var": "perf_easy",
+                "n_perm": C.N_PERMUT_BEHAVIOR,
+                "formula": "perf_easy ~ age_years",
+                "observed_val": obs,
+                "observed_val_p": obs_p,
+                "p_perm": p_perm,
+                "ave_null_dist": valid_null.mean(),
+                # "null_dist": valid_null,
+            })
+        df = pd.DataFrame(rows)
+        df.to_csv(filename, index=False)
+
     return df
 
 
 def stats_perf_before_trained(training_table, *, days_from_trained=(-5, -10)) :
-    rows = []
-    for d in days_from_trained:
-        data = training_table[training_table["num_days_from_trained"] == d]
-        data = data[~np.isnan(data["perf_easy"])].reset_index(drop=True)
-        obs, obs_p, p_perm, valid_null = run_permutation_test(
-            data=data, age_labels=data["age_years"].values, formula="perf_easy ~ age_years",
-            family_func=FAMILY_FUNC, shuffling=SHUFFLING, n_permut=C.N_PERMUT_BEHAVIOR,
-            n_jobs=4, random_state=RANDOM_STATE_BASE + abs(d), plot=False
-        )
-        rows.append({
-            "num_days_from_recording": d,  # kept the original key to maintain downstream compatibility
-            "y_var": "perf_easy",
-            "n_perm": C.N_PERMUT_BEHAVIOR,
-            "formula": "perf_easy ~ age_years",
-            "observed_val": obs,
-            "observed_val_p": obs_p,
-            "p_perm": p_perm,
-            "ave_null_dist": valid_null.mean(),
-            "null_dist": valid_null,
-        })
-    df = pd.DataFrame(rows)
-    reject, p_corr, _, _ = multipletests(df["p_perm"], alpha=0.05, method="fdr_bh")
-    df["p_corrected"] = p_corr
-    df["reject"] = reject
+    
+    """Permutation for 'perf_easy' on days preceding get_trained (e.g., -5, -10); caches CSV; returns a stats table."""
+
+    filename = C.RESULTSPATH / f"training_perf_before_trained_{C.N_PERMUT_BEHAVIOR}permutation.csv"
+    if filename.exists():
+        df = read_table(filename)
+    else:
+        rows = []
+        for d in days_from_trained:
+            data = training_table[training_table["num_days_from_trained"] == d]
+            data = data[~np.isnan(data["perf_easy"])].reset_index(drop=True)
+            obs, obs_p, p_perm, valid_null = run_permutation_test(
+                data=data, age_labels=data["age_years"].values, formula="perf_easy ~ age_years",
+                family_func=FAMILY_FUNC, shuffling=SHUFFLING, n_permut=C.N_PERMUT_BEHAVIOR,
+                n_jobs=4, random_state=C.RANDOM_STATE + abs(d), plot=False
+            )
+            rows.append({
+                "num_days_from_recording": d,  # kept the original key to maintain downstream compatibility
+                "y_var": "perf_easy",
+                "n_perm": C.N_PERMUT_BEHAVIOR,
+                "formula": "perf_easy ~ age_years",
+                "observed_val": obs,
+                "observed_val_p": obs_p,
+                "p_perm": p_perm,
+                "ave_null_dist": valid_null.mean(),
+                # "null_dist": valid_null,
+            })
+        df = pd.DataFrame(rows)
+
+        df.to_csv(filename, index=False)
     return df
 
 # =====================
@@ -424,15 +481,25 @@ def stats_perf_before_trained(training_table, *, days_from_trained=(-5, -10)) :
 # =====================
 
 def main():
-    # Data
-    # training_table = read_table(C.DATAPATH / TRAINING_FILE)
-    training_fp = C.DATAPATH / TRAINING_FILE  # Path
-    # print("DATAPATH:", C.DATAPATH, type(C.DATAPATH))
-    # print("TRAINING_FILE:", TRAINING_FILE, type(TRAINING_FILE))
-    # print("Full path:", training_fp)
-    training_table = read_table(training_fp)
+    """
+    Orchestrate Fig1S1 ('training history') pipeline.
 
-#     df = read_table(fp, engine="pyarrow")
+    Input
+    -----
+    data : C.DATAPATH / "training_history_149subjs_2025_NEW.parquet"
+
+    Output
+    ------
+    figure : C.FIGPATH / "Fig1S1_training_history_stats.pdf"
+    cached stats : multiple CSV files under C.RESULTSPATH (see stats_* docstrings).
+
+    Notes
+    -----
+    - SAVE_FIGURES controls saving the final figure.
+    - Uses global constants: N_JOBS, SHUFFLING, FAMILY_FUNC, C.N_PERMUT_BEHAVIOR, C.RANDOM_STATE.
+    """
+    training_fp = C.DATAPATH / TRAINING_FILE  # Path
+    training_table = read_table(training_fp)
     training = prepare_training_table(training_table)
 
     # Figure canvas
@@ -446,10 +513,10 @@ def main():
     res_until = stats_until_each_criterion(training)
     plot_training_until_criterion(training, criterion="get_trained",
                                   axes=[axs["trained_days"], axs["trained_sessions"], axs["trained_trials"]],
-                                  stat_results=res_until["get_trained"])
+                                  stat_results=res_until[res_until["criterion"]=="get_trained"])
     plot_training_until_criterion(training, criterion="first_recording",
                                   axes=[axs["f_record_days"], axs["f_record_sessions"], axs["f_record_trials"]],
-                                  stat_results=res_until["first_recording"])  
+                                  stat_results=res_until[res_until["criterion"]=='first_recording'])  
 
     # Stats — perf at criterion day 0
     res_at0 = stats_perf_at_criterion(training)

@@ -4,10 +4,20 @@ from joblib import Parallel, delayed
 import os
 import pingouin as pg
 import math
+import config as C
 
-def load_filtered_recordings(C.DATAPATH, filename = 'BWM_LL_release_afterQC_df.csv'):
+
+def load_filtered_recordings(datapath=C.DATAPATH, filename = 'BWM_LL_release_afterQC_df.csv'):
+    """
+    
+    paras:
+    matrix -- filename and position
+    
+    return:
+    result -- filtered recordings
+    """
     try:
-        recordings_filtered = pd.read_csv(os.path.join(C.DATAPATH,filename))
+        recordings_filtered = pd.read_csv( datapath / f"{filename}" )
     except Exception as err:
         print(f'errored: {err}')
         recordings_filtered =np.nan
@@ -133,7 +143,6 @@ def fdr_correct_by_group(df, p_col='p', group_cols=None, alpha=0.05, method='fdr
 
 
 
-
 def bf_gaussian_via_pearson(df: pd.DataFrame, y_col: str, x_col: str):
     """
     在 Gaussian + identity + 单自变量 场景下，
@@ -191,9 +200,24 @@ def interpret_bayes_factor(bf):
 
 
 
+def add_age_group(df):
+    """Return a copy with a categorical 'age_group' column based on C.AGE_GROUP_THRESHOLD."""
+    out = df.copy()
+    out["age_group"] = (out["mouse_age"] > C.AGE_GROUP_THRESHOLD).map({True: "old", False: "young"})
+    return out
+
+def add_age_months(df):
+    """Return a copy with 'age_months' = mouse_age / 30."""
+    out = df.copy()
+    out["age_months"] = out["mouse_age"] / 30.0
+    return out
 
 
-
+def add_age_years(df):
+    """Return a copy with 'age_years' = mouse_age / 365."""
+    out = df.copy()
+    out["age_years"] = out["mouse_age"] / 365
+    return out
 
 
 

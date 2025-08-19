@@ -11,7 +11,7 @@ import figrid as fg
 import seaborn as sns
 
 from ibl_style.utils import MM_TO_INCH
-from ibl_style.style import figure_style
+from scripts.utils.plot_utils import figure_style
 from scripts.utils.plot_utils import create_slice_org_axes
 from scripts.utils.io import read_table
 
@@ -76,7 +76,7 @@ def plot_modulation_time_courses_pooled(df, y_col='frs', estimator='median', gra
 
     if save:
         suffix = '2groups_' if split_by_age else ''
-        fname = f"t_Omnibus_group_modulation_{granularity}_{suffix}{y_col}_{estimator}_timecourse_{C.ALIGN_EVENT}_merged_noerrorbar.pdf"
+        fname = f"Omnibus_group_modulation_{granularity}_{suffix}{y_col}_{estimator}_timecourse_{C.ALIGN_EVENT}_merged_noerrorbar.pdf"
         fig.savefig(os.path.join(C.FIGPATH, fname), dpi=300)
 
     plt.show()
@@ -184,7 +184,7 @@ def plot_modulation_time_courses_by_region(df, y_col='frs', estimator='median', 
 if __name__ == "__main__":
 
     print(f"Loading df_all_conditions ...")
-    df_cond_path = C.DATAPATH / f"ibl_BWMLL_FFs_{C.ALIGN_EVENT}_{C.TRIAL_TYPE}_conditions_2025_merged.parquet"
+    df_cond_path = C.DATAPATH / f"ibl_BWMLL_FFs_{C.ALIGN_EVENT}_{C.TRIAL_TYPE}_conditions_2025.parquet"
     df_cond = read_table (df_cond_path)
     df_cond['age_group'] = df_cond['mouse_age'].map(lambda x: 'old' if x > C.AGE_GROUP_THRESHOLD else 'young')
     df_cond['abs_contrast'] = df_cond['signed_contrast'].abs()/100

@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 import figrid as fg
 import seaborn as sns
 from ibl_style.utils import MM_TO_INCH
-from ibl_style.style import figure_style
+from scripts.utils.plot_utils import figure_style
 import config as C
 from scripts.utils.plot_utils import create_slice_org_axes
 from scripts.utils.io import read_table
@@ -133,15 +133,15 @@ def plot_time_courses_by_region(df, y_col='frs', estimator='mean',errorbar = ('c
     plt.show()
 
 
-def main(mean_subtraction=False):
+def main(mean_subtraction=True):
     if mean_subtraction:
         y_FF_col = 'FFs_residuals'
         y_fr_col = 'frs_residuals'
-        df_cond_path = C.DATAPATH / f"ibl_BWMLL_FFs_{C.ALIGN_EVENT}_{C.TRIAL_TYPE}_2025_merged.parquet"
+        df_cond_path = C.DATAPATH / f"ibl_BWMLL_FFs_{C.ALIGN_EVENT}_{C.TRIAL_TYPE}_2025.parquet"
     else:
         y_FF_col = 'FFs'
         y_fr_col = 'frs'
-        df_cond_path = C.DATAPATH / f"ibl_BWMLL_FFs_{C.ALIGN_EVENT}_{C.TRIAL_TYPE}_conditions_2025_merged.parquet"
+        df_cond_path = C.DATAPATH / f"ibl_BWMLL_FFs_{C.ALIGN_EVENT}_{C.TRIAL_TYPE}_conditions_2025.parquet"
 
     print(f"Loading {get_suffix(mean_subtraction)} df_all_conditions...")
     df_cond = load_timecourse_data(df_cond_path)

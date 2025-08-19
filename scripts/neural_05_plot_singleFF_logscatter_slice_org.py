@@ -11,7 +11,7 @@ import seaborn as sns
 from matplotlib.ticker import LogLocator
 import figrid as fg
 from ibl_style.utils import get_coords, MM_TO_INCH, double_column_fig
-from ibl_style.style import figure_style
+from scripts.utils.plot_utils import figure_style
 from scripts.utils.io import read_table,save_figure
 
 def create_slice_org_axes_singleFF(fg, MM_TO_INCH, fig=None):
@@ -127,7 +127,7 @@ def plot_singleFF_mean_var(df, timepoint, save=True):
 if __name__ == "__main__":
 
     print("Loading df_all_conditions...")
-    df_cond_path = C.DATAPATH / f"ibl_BWMLL_FFs_{C.ALIGN_EVENT}_{C.TRIAL_TYPE}_conditions_2025_merged.parquet"
+    df_cond_path = C.DATAPATH / f"ibl_BWMLL_FFs_{C.ALIGN_EVENT}_{C.TRIAL_TYPE}_conditions_2025.parquet"
     df_cond = read_table(df_cond_path)
     df_cond['age_group'] = df_cond['mouse_age'].map(lambda x: 'old' if x > C.AGE_GROUP_THRESHOLD else 'young')
     

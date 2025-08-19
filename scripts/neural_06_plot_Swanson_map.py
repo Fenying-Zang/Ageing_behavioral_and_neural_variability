@@ -14,7 +14,7 @@ import matplotlib.pyplot as plt
 from matplotlib.colors import LinearSegmentedColormap
 from iblatlas.plots import plot_swanson_vector
 from iblatlas.atlas import BrainRegions
-from ibl_style.style import figure_style
+from scripts.utils.plot_utils import figure_style
 import config as C
 
 br = BrainRegions()
@@ -46,7 +46,7 @@ def load_stats_results(y_col, mean_subtraction=False, n_permut=C.N_PERMUT_NEURAL
         fname = f'Regional_{y_col}_{n_permut}permutation_{C.ALIGN_EVENT}_{C.TRIAL_TYPE}_{suffix}_2025.csv'
     else:
         fname = f'Regional_{y_col}_{n_permut}permutation_{C.ALIGN_EVENT}_{C.TRIAL_TYPE}_{suffix}_2025.csv'
-    return pd.read_csv(os.path.join(C.DATAPATH, fname))
+    return pd.read_csv(C.RESULTSPATH / fname)
 
 def get_vmin_vmax(metric):
     ranges = {

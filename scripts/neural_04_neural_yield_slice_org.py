@@ -8,27 +8,26 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
-from ibl_style.style import figure_style
+from scripts.utils.plot_utils import figure_style
 from ibl_style.utils import MM_TO_INCH
 import config as C
-                        #   C.ROIS, palette, n_permut_behavior, n_permut_neural_regional)
 from scripts.utils.plot_utils import create_slice_org_axes, map_p_value
 import figrid as fg
-from scripts.utils.data_utils import shuffle_labels_perm,bf_gaussian_via_pearson,interpret_bayes_factor
+from scripts.utils.data_utils import shuffle_labels_perm, bf_gaussian_via_pearson, interpret_bayes_factor
 from joblib import Parallel, delayed
 from statsmodels.genmod.families import Gaussian
 from statsmodels.formula.api import glm
-# from statsmodels.genmod.families import Gamma
-from statsmodels.genmod.families.links import Log 
 from tqdm import tqdm
 from scripts.utils.plot_utils import plot_permut_test
 from scripts.utils.io import read_table
 
 def load_neural_yield_table():
     table = read_table(
-        os.path.join(C.DATAPATH, f'ibl_BWMLL_neural_yield_{C.ALIGN_EVENT}_{C.TRIAL_TYPE}_2025_merged.parquet'))
+        # os.path.join(C.DATAPATH, f'ibl_BWMLL_neural_yield_{C.ALIGN_EVENT}_{C.TRIAL_TYPE}_2025_merged.parquet'))
+        os.path.join(C.DATAPATH, f'ibl_BWMLL_neural_yield_{C.ALIGN_EVENT}_{C.TRIAL_TYPE}_2025.parquet'))
+
     table['neural_yield'] = table['n_cluster'] / table['n_channel']
-    table['age_group'] = table['age_at_recording'].map(lambda x: 'old' if x > 300 else 'young')
+    table['age_group'] = table['age_at_recording'].map(lambda x: 'old' if x > C.AGE_GROUP_THRESHOLD else 'young')
     table['age_years'] = table['age_at_recording'] / 365
     return table
 
@@ -71,17 +70,13 @@ def run_permutation_test(data, this_age, formula2use, family_func, n_permut, n_j
     return observed_val, observed_val_p, p_perm, valid_null
 
 def get_permut_results (y_var, age2use, neural_yield_table):
-    filename = C.DATAPATH / f"regional_{y_var}_{age2use}_{C.N_PERMUT_NEURAL_REGIONAL}permutation.csv"
+    filename = C.RESULTSPATH / f"regional_{y_var}_{age2use}_{C.N_PERMUT_NEURAL_REGIONAL}permutation_NEW.csv"
     if filename.exists():
         permut_df = pd.read_csv(filename)
-        # p_perm = permut_df['p_perm'].values[0]
-        # observed_val = permut_df['observed_val'].values[0]
-
     else:
 
         # shuffling='labels1_global'#'labels1_based_on_2'
         family_func = Gaussian()
-        # plot = True
         formula2use = f"{y_var} ~ age_years"
         region_results = []
         for region in C.ROIS:
@@ -118,8 +113,9 @@ def get_permut_results (y_var, age2use, neural_yield_table):
         permut_df.to_csv(filename, index=False) 
     return permut_df
 
+
 def get_bf_results(content, age2use, df):
-    filename = C.DATAPATH / f"regional_beyesfactor_{content}.csv"
+    filename = C.RESULTSPATH / f"regional_beyesfactor_{content}_NEW.csv"
     if filename.exists():
         BF_df = pd.read_csv(filename)
         # BF10 = BF_dict['BF10'].values[0]
@@ -149,6 +145,7 @@ def get_bf_results(content, age2use, df):
 
     return BF_df
 
+
 def plot_yield_by_region(df, permut_df, bf_df, y_var='n_cluster', save_fig=True):
 
     fig, axs = create_slice_org_axes(fg, MM_TO_INCH)
@@ -174,7 +171,7 @@ def plot_yield_by_region(df, permut_df, bf_df, y_var='n_cluster', save_fig=True)
         else:
             txt = fr" $\beta_{{\mathrm{{age}}}} = {beta:.3f}, $"+ f"$p_{{\\mathrm{{perm}}}} {p_perm_mapped}$" +  f"\n$BF_{{\\mathrm{{10}}}} = {BF10:.3f}, $" + f" {BF_conclusion}"
 
-        ax.text(0.05, 1.2, txt, transform=ax.transAxes, fontsize=4, verticalalignment='top',linespacing=0.8)
+        ax.text(0.05, 1.2, txt, transform=ax.transAxes, fontsize=4, verticalalignment='top', linespacing=0.8)
 
         if BF_conclusion == 'strong H1' or BF_conclusion == 'moderate H1':
             sns.regplot(data=sub_df, x=sub_df['age_at_recording'] / 30, y=y_var,
@@ -207,6 +204,6 @@ if __name__ == "__main__":
     for y_var in ['n_cluster', 'neural_yield']:
         permut_df = get_permut_results(y_var, C.AGE2USE, neural_yield_table)
         bf_df = get_bf_results(y_var, C.AGE2USE, neural_yield_table)
-        plot_yield_by_region(neural_yield_table, permut_df,bf_df, y_var)
+        plot_yield_by_region(neural_yield_table, permut_df, bf_df, y_var)
 
 

@@ -12,7 +12,7 @@ import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
 
-from ibl_style.style import figure_style
+from scripts.utils.plot_utils import figure_style
 from ibl_style.utils import get_coords, MM_TO_INCH, double_column_fig
 import figrid as fg
 
@@ -25,9 +25,6 @@ from statsmodels.genmod.families import Gamma
 from statsmodels.genmod.families.links import Log
 
 import config as C
-#     tolerance, C.DATAPATH, C.FIGPATH, C.ALIGN_EVENT, C.TRIAL_TYPE, age2use,
-#     C.ROIS, palette, n_permut_behavior, n_permut_neural_regional, C.AGE_GROUP_THRESHOLD
-# )
 from scripts.utils.permutation_test import plot_permut_test
 from scripts.utils.data_utils import shuffle_labels_perm, bf_gaussian_via_pearson, interpret_bayes_factor
 from scripts.utils.plot_utils import map_p_value
@@ -68,7 +65,7 @@ def single_permutation(i, data, permuted_label, formula2use, family_func=Gamma(l
 
 
 def run_permutation(df_at_timepoint, n_permut, timepoint, family_func=FAMILY_FUNC, shuffling=SHUFFLING,
-                    n_jobs=N_JOBS, plot=False, outdir=C.DATAPATH):
+                    n_jobs=N_JOBS, plot=False, outdir=C.RESULTSPATH):
     """
     Run permutation tests for all movement metrics at a single timepoint.
     Saves a CSV of the results and returns the DataFrame.
@@ -215,7 +212,7 @@ def plot_movement_timecourse(final_df, fig, axes, estimator='mean', save_figures
     plt.show()
 
     if save_figures:
-        out = C.FIGPATH / f"t_supp_wheel_cam_movement_timecourse_{C.ALIGN_EVENT}_2025-4.pdf"
+        out = C.FIGPATH / f"supp_wheel_cam_movement_timecourse_{C.ALIGN_EVENT}_2025-4.pdf"
         fig.savefig(out)
 
 
@@ -281,7 +278,7 @@ def plot_movement_scatters(df_at_timepoint, result_df, timepoint, fig, axes, sav
 
     if save_fig:
         C.FIGPATH.mkdir(parents=True, exist_ok=True)
-        out = C.FIGPATH / f"t_supp_move_wheel_cam_{C.ALIGN_EVENT}_{timepoint}_2025-4.pdf"
+        out = C.FIGPATH / f"supp_move_wheel_cam_{C.ALIGN_EVENT}_{timepoint}_2025-4.pdf"
         fig.savefig(out)
 
 
@@ -291,11 +288,11 @@ def plot_movement_scatters(df_at_timepoint, result_df, timepoint, fig, axes, sav
 def main(save_fig=True):
     # Load data (QC-filtered preferred, else raw)
     try:
-        df = read_table(Path(C.DATAPATH) / "ibl_QCfiltered_wheel_cam_results.parquet")
+        df = read_table(C.DATAPATH / "ibl_QCfiltered_wheel_cam_results.parquet")
         print(len(set(df['eid'])), 'sessions remaining (QC-filtered)')
     except FileNotFoundError:
         print('Cannot find the filtered movement data, loading the raw data...')
-        df = read_table(Path(C.DATAPATH) / "ibl_wheel&dlc_movement_timecourse_2025.parquet")
+        df = read_table(C.DATAPATH / "ibl_wheel&dlc_movement_timecourse_2025.parquet")
 
     # Age group
     df['age_group'] = df['age_at_recording'].map(lambda x: 'old' if x > C.AGE_GROUP_THRESHOLD else 'young')
@@ -307,7 +304,7 @@ def main(save_fig=True):
     # Point estimates at specific timepoints
     for timepoint in [0, 0.26]:
         df_tp = extract_timepoint(df, timepoint, tolerance=1e-2)  
-        results_csv = C.DATAPATH / f"movement_t_{timepoint}_{C.N_PERMUT_BEHAVIOR}permut_results.csv"
+        results_csv = C.RESULTSPATH / f"movement_t_{timepoint}_{C.N_PERMUT_BEHAVIOR}permut_results.csv"
         if results_csv.exists():
             perm_df = read_table(results_csv)
         else:
@@ -316,8 +313,10 @@ def main(save_fig=True):
 
         fig_sc, axes_sc = build_figure_layout()
         plot_movement_scatters(df_tp, result_df=perm_df, timepoint=timepoint, fig=fig_sc, axes=axes_sc, save_fig=save_fig)
-        print(f"Saved figure to {C.FIGPATH}/t_supp_move_wheel_cam_{C.ALIGN_EVENT}_{timepoint}_2025-4.pdf")
+        print(f"Saved figure to {C.FIGPATH}/supp_move_wheel_cam_{C.ALIGN_EVENT}_{timepoint}_2025-4.pdf")
 
 
 if __name__ == "__main__":
     main(save_fig=True)
+
+# %%

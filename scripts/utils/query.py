@@ -9,6 +9,7 @@ from iblutil.numerical import ismember
 from brainbox.io.one import SpikeSortingLoader, SessionLoader
 from brainbox.behavior import training
 from iblatlas.regions import BrainRegions
+import config as C
 # from ibllib.qc.base import CRITERIA
 # from one.remote import aws
 # import brainwidemap
@@ -49,7 +50,7 @@ def bwm_query(one=None, alignment_resolved=True, return_details=False, freeze='2
 
         # fixtures_path = Path(brainwidemap.__file__).parent.joinpath('fixtures')
             
-        freeze_file = os.path.join('../data/',f'{freeze}.csv')
+        freeze_file = C.DATAPATH / f'{freeze}.csv'
         print(freeze_file)
         # assert freeze_file.exists(), f'{freeze} does not seem to be a valid freeze.'
 

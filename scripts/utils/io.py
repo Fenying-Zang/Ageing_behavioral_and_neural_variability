@@ -18,7 +18,7 @@ def read_table(path: Path, *, engine: str | None = None) -> pd.DataFrame:
 
     suffix = p.suffix.lower()
     if suffix in (".parquet", ".pq"):
-        return read_table(p, engine=engine) if engine else read_table(p)
+        return pd.read_parquet(p, engine=engine or "pyarrow")
     if suffix in (".csv", ".txt"):
         return pd.read_csv(p)
     raise ValueError(f"Unsupported file extension for {p.name}")

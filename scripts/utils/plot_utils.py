@@ -10,6 +10,40 @@ import figrid as fg
 import matplotlib.pyplot as plt
 from pathlib import Path
 
+
+def figure_style():
+    sns.set_theme(style="ticks", context="paper",
+            rc={"font.size": 7,
+                "axes.titlesize": 8,
+                "axes.labelsize": 7,
+                "axes.linewidth": 0.5,
+                "axes.spines.top": False,
+                "axes.spines.right": False,
+                "legend.title_fontsize": 7,
+                "lines.linewidth": 1,
+                "lines.markersize": 4,
+                "xtick.labelsize": 6,
+                "ytick.labelsize": 6,
+                "savefig.transparent": False,
+                "xtick.major.size": 2.5,
+                "ytick.major.size": 2.5,
+                "xtick.major.width": 0.5,
+                "ytick.major.width": 0.5,
+                "xtick.minor.size": 2,
+                "ytick.minor.size": 2,
+                "xtick.minor.width": 0.5,
+                "ytick.minor.width": 0.5,
+                "axes.labelcolor": "black",
+                "text.color": "black",
+                "xtick.color": "black",
+                "ytick.color": "black",
+                "axes.edgecolor": "black",
+                })
+    matplotlib.rcParams['pdf.fonttype'] = 42
+    matplotlib.rcParams['ps.fonttype'] = 42
+    matplotlib.rcParams['font.family'] = 'Arial'
+
+
 def set_seaborn():
     """
     Set seaborn style for plotting figures (print-friendly)
@@ -25,7 +59,6 @@ def set_seaborn():
             "xtick.labelsize": 7,
             "ytick.labelsize": 7,
             "savefig.transparent": False,
-            "savefig.dpi": 300,
             "xtick.major.size": 2.5,
             "ytick.major.size": 2.5,
             "xtick.minor.size": 2,
@@ -345,3 +378,38 @@ def plot_permut_test(null_dist, observed_val, p, mark_p=None, metric=None, save_
         plt.close(fig)
 
     return fig, ax
+
+
+
+def format_bf_annotation(beta, p_perm, BF10, BF_conclusion, beta_label="age", big_bf=100):
+    """
+    Build the multiline annotation string used in scatter panels.
+
+    Parameters
+    ----------
+    beta : float
+    p_perm : float
+    BF10 : float
+    BF_conclusion : str
+    beta_label : str, default "age"
+        LaTeX subscript label for beta, e.g., 'age'.
+    big_bf : float, default 100
+        Threshold for using '> big_bf' instead of a numeric BF.
+
+    Returns
+    -------
+    str : formatted annotation string with two lines.
+    """
+    mapped = map_p_value(p_perm)  # uses your existing helper
+    # BF line: "> 100" if big enough, else numeric
+    if np.isfinite(BF10) and BF10 > big_bf:
+        bf_str = r"$BF_{\mathrm{10}} > " + f"{int(big_bf)}" + r", $"
+    else:
+        bf_str = r"$BF_{\mathrm{10}} = " + f"{BF10:.3f}" + r", $"
+
+    txt = (
+        r" $\beta_{\mathrm{" + beta_label + r"}} = " + f"{beta:.3f}, $" +
+        r"$p_{\mathrm{perm}} " + f"{mapped}" + r"$" +
+        "\n" + bf_str + f" {BF_conclusion}"
+    )
+    return txt

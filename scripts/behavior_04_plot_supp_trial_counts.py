@@ -6,7 +6,7 @@ output: figures/F1S1_num_trials_filtering.pdf
 """
 #%%
 from ibl_style.utils import get_coords, MM_TO_INCH, double_column_fig
-from ibl_style.style import figure_style
+from scripts.utils.plot_utils import figure_style
 import figrid as fg
 import matplotlib.pyplot as plt
 from one.api import ONE
@@ -20,7 +20,9 @@ from tqdm import tqdm
 from scripts.utils.behavior_utils import filter_trials
 from scripts.utils.plot_utils import plot_permut_test, map_p_value
 from scripts.utils.data_utils import shuffle_labels_perm, bf_gaussian_via_pearson, interpret_bayes_factor
+from scripts.utils.io import read_table, save_figure
 import config as C
+from scripts.utils.stats_utils import single_permutation, run_permutation_test
 
 one = ONE()
 # Define the default styling used for figures
@@ -29,14 +31,14 @@ def setup_fig_axes(fg, MM_TO_INCH, fig=None):
         fig = double_column_fig()
     figure_style()
 
-       # Make a double column figure
+    # Make a double column figure
     fig = double_column_fig()
 
-       # Get the dimensions of the figure in mm
-    width, height = fig.get_size_inches() / MM_TO_INCH #180, 170
+    # Get the dimensions of the figure in mm
+    width, height = fig.get_size_inches() / MM_TO_INCH  #180, 170
     yspans = get_coords(height, ratios=[1,1], space=15, pad=5, span=(0, 0.6))
 
-    xspans1 = get_coords(width, ratios=[1, 1, 1], space=20, pad=5, span=(0, 1))#from 0-1
+    xspans1 = get_coords(width, ratios=[1, 1, 1], space=20, pad=5, span=(0, 1))  #from 0-1
 
     axs = {'scatter_raw_trials': fg.place_axes_on_grid(fig, xspan=xspans1[0], yspan=yspans[0]),
               'scatter_clean_trials': fg.place_axes_on_grid(fig, xspan=xspans1[2], yspan=yspans[0]),
@@ -44,12 +46,6 @@ def setup_fig_axes(fg, MM_TO_INCH, fig=None):
 
     }
     return fig, axs
-
-# def load_trial_table(filepath):
-#     trials_table = pd.read_csv(filepath)
-#     print(len(set(trials_table['eid'])), 'sessions loaded')
-#     return trials_table
-
 
 def single_permutation(i, data, permuted_label, formula2use, family_func):
     try:
@@ -89,8 +85,9 @@ def run_permutation_test(data, this_age, formula2use, family_func, n_permut, n_j
 
     return observed_val, observed_val_p, p_perm, valid_null
 
+
 def get_bf_results(content, df, age2use):
-    filename = C.DATAPATH / f"beyesfactor_{content}_trials.csv"
+    filename = C.RESULTSPATH / f"beyesfactor_{content}_trials.csv"
     if filename.exists():
         BF_dict = pd.read_csv(filename)
         BF10 = BF_dict['BF10'].values[0]
@@ -109,9 +106,10 @@ def get_bf_results(content, df, age2use):
         bf_df.to_csv(filename, index=False)
     return BF10, BF_conclusion
 
+
 def get_permut_results (content, age2use, df):
 
-    filename = C.DATAPATH / f"num_{content}_trials_{age2use}_{C.N_PERMUT_BEHAVIOR}permutation.csv"
+    filename = C.RESULTSPATH / f"num_{content}_trials_{age2use}_{C.N_PERMUT_BEHAVIOR}permutation.csv"
     if filename.exists():
         permut_df = pd.read_csv(filename)
         p_perm = permut_df['p_perm'].values[0]
@@ -154,7 +152,7 @@ def plot_single_scatterplot(df, ax, p_perm, observed_val, BF10, BF_conclusion=No
     else:
         txt = fr" $\beta_{{\mathrm{{age}}}} = {observed_val:.3f}, $"+ f"$p_{{\\mathrm{{perm}}}} {p_perm_mapped}$" +  f"\n$BF_{{\\mathrm{{10}}}} = {BF10:.3f}, $" + f" {BF_conclusion}"
 
-    ax.text(0.05, 1.1, txt , transform=ax.transAxes, fontsize=6,verticalalignment='top')
+    ax.text(0.05, 1.1, txt, transform=ax.transAxes, fontsize=6, verticalalignment='top')
 
     if BF_conclusion == 'strong H1' or BF_conclusion == 'moderate H1':
         sns.regplot(data=df, x='age_months', y='n_trials', 
@@ -163,7 +161,7 @@ def plot_single_scatterplot(df, ax, p_perm, observed_val, BF10, BF_conclusion=No
         sns.regplot(data=df, x='age_months', y='n_trials', 
                     fit_reg=False, marker='.', color="1", line_kws=dict(color="gray"), ax=ax) #color = .3
     sns.scatterplot(x='age_months', y='n_trials', data=df, hue='age_group',
-            alpha=1, marker='.',legend=False, palette=C.PALETTE, hue_order=['young','old'], ax=ax)  #marker='o',s=10,
+            alpha=1, marker='.', legend=False, palette=C.PALETTE, hue_order=['young','old'], ax=ax)  #marker='o',s=10,
 
     ax.set_xlabel('Age (months)')
     ax.set_ylabel('# trials')  
@@ -171,10 +169,9 @@ def plot_single_scatterplot(df, ax, p_perm, observed_val, BF10, BF_conclusion=No
     return ax
 
 
-def main(save_fig = True):
-
+def main(save_fig=True):
     trials_table_file = C.DATAPATH / 'ibl_included_eids_trials_table2025_full.csv'
-    trials_table = load_trial_table(trials_table_file)
+    trials_table = read_table(trials_table_file)
 
     trials_table_filltered = filter_trials(
         trials_table, exclude_nan_event_trials=True, 
@@ -185,21 +182,21 @@ def main(save_fig = True):
     # permut_results = load_permut_results() #TODO
     fig, axs = setup_fig_axes(fg, MM_TO_INCH)
     
-    for content in ['raw','clean']:
+    for content in ['raw', 'clean']:
         ax = axs[f'scatter_{content}_trials']
-        if content=='raw':
+        if content == 'raw':
             data2fit = trials_table
         else: 
             data2fit = trials_table_filltered.loc[~trials_table_filltered['rt'].isna()] 
         data2fit['age_group'] = (data2fit['mouse_age'] > C.AGE_GROUP_THRESHOLD).map({True: "old", False: "young"})
         
-        num_trials_df = data2fit.groupby(['age_group','eid','mouse_age']).aggregate(
-                                    n_trials = pd.NamedAgg(column='trial_index',aggfunc='count'),
+        num_trials_df = data2fit.groupby(['age_group', 'eid', 'mouse_age']).aggregate(
+                                    n_trials=pd.NamedAgg(column='trial_index', aggfunc='count'),
                                     ).reset_index()
         num_trials_df['age_months'] = num_trials_df['mouse_age']/30
         num_trials_df['age_years'] = num_trials_df['mouse_age']/365
-        p_perm, observed_val = get_permut_results (content, age2use='age_years', df=num_trials_df) #TODO: 
-        BF10, BF_conclusion = get_bf_results(content, df=num_trials_df,age2use='age_years')
+        p_perm, observed_val = get_permut_results(content, age2use='age_years', df=num_trials_df) #TODO: 
+        BF10, BF_conclusion = get_bf_results(content, df=num_trials_df, age2use='age_years')
         ax = plot_single_scatterplot(num_trials_df, ax, p_perm, observed_val, BF10, BF_conclusion)
     
     ax = axs['scatter_num_exc_trials']
@@ -208,22 +205,20 @@ def main(save_fig = True):
     data2fit['age_group'] = (data2fit['mouse_age'] > C.AGE_GROUP_THRESHOLD).map({True: "old", False: "young"})
 
     num_trials_df_exc = data2fit.groupby(['age_group','eid','mouse_age']).aggregate(
-                                n_trials = pd.NamedAgg(column='trial_index',aggfunc='count'),
+                                n_trials=pd.NamedAgg(column='trial_index', aggfunc='count'),
                                 ).reset_index()
     num_trials_df_exc['age_months'] = num_trials_df_exc['mouse_age']/30
     num_trials_df_exc['age_years'] = num_trials_df_exc['mouse_age']/365
 
-    p_perm, observed_val = get_permut_results ('exc', age2use='age_years', df=num_trials_df_exc) #TODO:
-    BF10, BF_conclusion = get_bf_results('exc', df=num_trials_df_exc,age2use='age_years')
+    p_perm, observed_val = get_permut_results('exc', age2use='age_years', df=num_trials_df_exc) #TODO:
+    BF10, BF_conclusion = get_bf_results('exc', df=num_trials_df_exc, age2use='age_years')
 
     ax = plot_single_scatterplot(num_trials_df_exc, ax, p_perm, observed_val, BF10, BF_conclusion)
     if save_fig:
-        figname = C.FIGPATH / f"F1S1_num_trials_filtering.pdf"
-        fig.savefig(figname, dpi=300)
-        print(f"Figure saved to {C.FIGPATH}")
+        figname = C.FIGPATH / "F1S1_num_trials_filtering.pdf"
+        save_figure(fig, figname)
+        print(f"Figure saved to {figname}")
 
 
 if __name__ == "__main__":
-    main(save_fig = True)
-
-#%%
+    main(save_fig=True)
