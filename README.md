@@ -1,8 +1,7 @@
 # ageing_behavioral_and_neural_variability
 *Code and data for analyzing age-related changes in behavioral and neural variability in the IBL visual decision-making task.*
 
-This repository contains the code and data used to analyze **age-related changes in behavioral and neural variability** during a visual decision-making task.  
-We use large-scale extracellular **Neuropixels recordings in behaving mice**, made publicly available by the [International Brain Laboratory (IBL)](https://www.internationalbrainlab.com/).
+This repository contains the code and data used to analyze **age-related changes in behavioral and neural variability** during a visual decision-making task. We use large-scale extracellular **Neuropixels recordings in behaving mice**, made publicly available by the [International Brain Laboratory (IBL)](https://www.internationalbrainlab.com/).
 
 Fenying Zang, Leiden University, 2025, f.zang@fsw.leidenuniv.nl
 
@@ -10,8 +9,7 @@ Fenying Zang, Leiden University, 2025, f.zang@fsw.leidenuniv.nl
 
 ## Installation & Setup
 
-This project builds on the IBL unified environment.  
-For **full reproducibility**, we recommend installing the [IBL environment](https://github.com/int-brain-lab/iblenv).
+This project builds on the IBL unified environment. For **full reproducibility**, we recommend installing the [IBL environment](https://github.com/int-brain-lab/iblenv).
 
 If you only want to **reproduce figures** using the provided intermediate data, you can install dependencies directly from `requirements.txt`. #TODO: 
 
@@ -35,13 +33,13 @@ This repository uses Git LFS (Large File Storage, an extension to Git, so must h
 Without Git LFS, these files will appear only as small pointer text files instead of the actual data.
 - Install Git LFS
 
- - macOS (Homebrew):
+  - macOS (Homebrew):
 
- ```bash
- brew install git-lfs
- ```
+    ```bash
+    brew install git-lfs
+    ```
 
- - Windows: Download the installer from [git-lfs.com](https://git-lfs.com/) 
+  - Windows: Download the installer from [git-lfs.com](https://git-lfs.com/) 
 
 - Initialize Git LFS (only once per machine)
 
@@ -75,7 +73,7 @@ ageing_behavioral_and_neural_variability/
 ## Reproducing Figures
 
 - Clean up the `figures/` folder (optional).
-- Run `run_figs.py` script. This will generate all manuscript figures using intermediate `.parquet` or `.csv` files from the `data/` and `results/` folder.
+- Run `run_figs.py` script. This will generate all manuscript figures using intermediate `.parquet` and `.csv` files from the `data/` and `results/` folder.
 - If you want to regenerate intermediate data from scratch, see the individual scripts in `scripts/`. #TODO:
 
 ## Data
