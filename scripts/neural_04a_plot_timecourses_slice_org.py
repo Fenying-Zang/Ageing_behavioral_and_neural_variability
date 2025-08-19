@@ -69,7 +69,7 @@ def plot_time_courses_pooled(df, y_col='frs', estimator='mean',
         fname = f"Omnibus_group_{granularity}_{get_suffix(mean_subtraction)}_{y_col}_{estimator}_timecourse_{C.ALIGN_EVENT}.pdf"
         fig.savefig(os.path.join(C.FIGPATH, fname), dpi=300)
 
-    plt.show()
+    #plt.show()()
 
 
 def plot_time_courses_by_region(df, y_col='frs', estimator='mean',errorbar = ('ci', 95),
@@ -130,7 +130,7 @@ def plot_time_courses_by_region(df, y_col='frs', estimator='mean',errorbar = ('c
 
     if save:
         fig.savefig(os.path.join(C.FIGPATH, f"Slice_org_{get_suffix(mean_subtraction)}_{granularity}_{y_col}_{estimator}_timecourse_{C.ALIGN_EVENT}.pdf"), dpi=300)
-    plt.show()
+    #plt.show()()
 
 
 def main(mean_subtraction=True):

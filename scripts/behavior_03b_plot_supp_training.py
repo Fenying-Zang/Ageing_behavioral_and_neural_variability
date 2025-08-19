@@ -538,7 +538,7 @@ def main():
                                   ax=axs["trained_10"], stat_results=res_before)
 
     # Finalize
-    plt.show()
+    #plt.show()()
     if SAVE_FIGURES:
         os.makedirs(C.FIGPATH, exist_ok=True)
         fig.savefig(os.path.join(C.FIGPATH, "Fig1S1_training_history_stats.pdf"))

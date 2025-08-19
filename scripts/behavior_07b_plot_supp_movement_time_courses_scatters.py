@@ -209,7 +209,7 @@ def plot_movement_timecourse(final_df, fig, axes, estimator='mean', save_figures
     fig.supxlabel('Time from stim Onset (s)', y=0.4)
 
     plt.tight_layout()
-    plt.show()
+    #plt.show()()
 
     if save_figures:
         out = C.FIGPATH / f"supp_wheel_cam_movement_timecourse_{C.ALIGN_EVENT}_2025-4.pdf"
@@ -274,7 +274,7 @@ def plot_movement_scatters(df_at_timepoint, result_df, timepoint, fig, axes, sav
 
     supxlabel = fig.supxlabel('Age (months)')
     supxlabel.set_y(0.45)
-    plt.show()
+    #plt.show()
 
     if save_fig:
         C.FIGPATH.mkdir(parents=True, exist_ok=True)
@@ -319,4 +319,3 @@ def main(save_fig=True):
 if __name__ == "__main__":
     main(save_fig=True)
 
-# %%

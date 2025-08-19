@@ -23,10 +23,6 @@ def extract_pre_post_values(df, pre_time=C.PRE_TIME, post_time=C.POST_TIME, tol=
     metrics = []
     grouped = df.groupby(['uuids', 'signed_contrast'])
     for (uid, contrast), group in grouped:
-        # n_trials = len(group)
-        # print(uid, contrast)
-        # print(n_trials)
-        # print(len(group['']))
         pre_row = group[np.abs(group['timepoints'] - pre_time) < tol]
         post_row = group[np.abs(group['timepoints'] - post_time) < tol]
 

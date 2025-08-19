@@ -332,7 +332,7 @@ def plot_permut_test(null_dist, observed_val, p, mark_p=None, metric=None, save_
         mark_p: float or None, if not None, draw significance threshold (e.g., 0.95)
         title: str or None, optional title for the plot
         save_path: str or Path or None, if set, the figure will be saved there
-        show: bool, whether to display the plot via plt.show()
+        show: bool, whether to display the plot via #plt.show()()
     
     Returns:
         fig, ax: Matplotlib figure and axes objects
@@ -372,10 +372,10 @@ def plot_permut_test(null_dist, observed_val, p, mark_p=None, metric=None, save_
         fig.savefig(save_name, dpi=300)
         print(f"[Saved] {save_path}")
 
-    if show:
-        plt.show()
-    else:
-        plt.close(fig)
+    # if show:
+    #     #plt.show()()
+    # else:
+    #     plt.close(fig)
 
     return fig, ax
 

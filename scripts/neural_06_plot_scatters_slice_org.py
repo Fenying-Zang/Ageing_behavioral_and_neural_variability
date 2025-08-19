@@ -3,8 +3,6 @@ pooled; slice_org
 raw; mean-subtracted
 all 7 metrics
 
-#TODO: add stats results
-
 """
 #%%
 import pandas as pd
@@ -21,24 +19,9 @@ import config as C
 from scripts.utils.plot_utils import create_slice_org_axes, map_p_value
 from scripts.utils.io import read_table, save_figure
 
-# def load_stats_results(df_path):
-#     """
-#     Load stats
-#     """
-#     return pd.read_csv(df_path)
-
 
 def get_suffix(mean_subtraction):
     return 'meansub' if mean_subtraction else ''
-
-# def get_vmin_vmax(metric):
-#     ranges = {
-#         'pre_fr': (0, 50), 'post_fr': (0, 50),
-#         'fr_delta_modulation': (-10, 20),
-#         'pre_ff': (0.5, 2.25), 'post_ff': (0.5, 2.25),
-#         'ff_quench': (-0.8, 0.4), 'ff_quench_modulation': (-1.5, 2.5)
-#     }
-#     return ranges.get(metric, (-1, 1))
 
 
 def get_vmin_vmax(metric):
@@ -153,10 +136,6 @@ def plot_scatter_pooled(df, permut_df, BF_df, y_col='pre_fr', estimator='mean',
     BF_conclusion = BF_df.loc[BF_df['metric'] == y_col, 'BF10_age_category'].values[0]
     BF10 = BF_df.loc[BF_df['metric'] == y_col, 'BF10_age'].values[0]
 
-    # sns.scatterplot(x='mouse_age_months', y=y_col, data=agg_df, hue='age_group',#size='num_datapoints',
-    #     marker='.', legend=False, s=agg_df['number_neurons'],
-    #     palette=palette, ax=ax)  # style_order=['M','F'],style='mouse_sex' #TODO: alpha=0.8
-
 
     if y_col in ['pre_fr','post_fr','pre_ff','post_ff']:
         # fig, ax = plt.subplots(1, 1, figsize=(3, 2.36))  
@@ -166,13 +145,12 @@ def plot_scatter_pooled(df, permut_df, BF_df, y_col='pre_fr', estimator='mean',
             marker='.', legend=False, s=agg_df['number_neurons'],
             palette=C.PALETTE, ax=ax)  # style_order=['M','F'],style='mouse_sex' #TODO: alpha=0.8
         if BF_conclusion == 'strong H1' or BF_conclusion == 'moderate H1':
-            chain_table = pd.read_csv(os.path.join(C.RESULTSPATH, f'omnibus_{y_col}_BF_chain_table.csv'), index_col=0)
+            chain_table = read_table(C.RESULTSPATH / f'omnibus_{y_col}_BF_chain_table.csv').set_index("Unnamed: 0")
             age_range, logFF_preds = custom_fit_line(df, chain_table, mean_subtraction=mean_subtraction)
             sns.lineplot(x=age_range*12, y=logFF_preds, color='gray', lw=0.8, ax=ax)
         vmin, vmax = get_vmin_vmax(f'log_{y_col}')
         ax.set_ylim(vmin, vmax)
 
-        # 4) 设置单轴（左轴）为 log 间距 + 原始单位标签
         if 'fr' in y_col:
             tick_vals = [2, 4, 8, 16, 32, 64]
         elif 'ff' in y_col:
@@ -219,7 +197,6 @@ def plot_scatter_pooled(df, permut_df, BF_df, y_col='pre_fr', estimator='mean',
         fname = f'Omnibus_{y_col}_{get_suffix(mean_subtraction)}_scatter.pdf'
         plt.savefig(os.path.join(C.FIGPATH, fname), dpi=500)
 
-    plt.show()
 
 
 def plot_scatter_by_region(df, permut_df, BF_df, y_col='pre_fr', estimator='mean',
@@ -266,10 +243,10 @@ def plot_scatter_by_region(df, permut_df, BF_df, y_col='pre_fr', estimator='mean
 
             sns.scatterplot(x='mouse_age_months', y=f'log_{y_col}', data=agg_df, hue='age_group',#size='num_datapoints',
                 marker='.', legend=False, s=agg_df['number_neurons'],
-                palette=C.PALETTE, ax=ax)  # style_order=['M','F'],style='mouse_sex' #TODO: alpha=0.8
+                palette=C.PALETTE, ax=ax)  
             if BF_conclusion == 'strong H1' or BF_conclusion == 'moderate H1':
                 #TODO:
-                chain_table = read_table((C.RESULTSPATH / f'omnibus_{y_col}_{region}_BF_chain_table.csv'))
+                chain_table = read_table(C.RESULTSPATH / f'omnibus_{y_col}_{region}_BF_chain_table.csv').set_index("Unnamed: 0")
                 # print(chain_table)
                 age_range, logFF_preds = custom_fit_line_region(sub_df, chain_table, mean_subtraction=mean_subtraction)
                 sns.lineplot(x=age_range*12, y=logFF_preds, color='gray', lw=0.8, ax=ax)
@@ -277,7 +254,7 @@ def plot_scatter_by_region(df, permut_df, BF_df, y_col='pre_fr', estimator='mean
         else:
             sns.scatterplot(x='mouse_age_months', y=y_col, data=agg_df, hue='age_group',#size='num_datapoints',
                 marker='.', legend=False, s=agg_df['number_neurons'],
-                palette=C.PALETTE, ax=ax)  # style_order=['M','F'],style='mouse_sex' #TODO: alpha=0.8
+                palette=C.PALETTE, ax=ax) 
             
             if BF_conclusion == 'strong H1' or BF_conclusion == 'moderate H1':
                 sns.regplot( x='mouse_age_months', y=y_col, data=agg_df,
@@ -310,13 +287,10 @@ def plot_scatter_by_region(df, permut_df, BF_df, y_col='pre_fr', estimator='mean
         filename = C.FIGPATH / f"supp_slice_org_{y_col}_{granularity}_{get_suffix(mean_subtraction)}_{estimator}_age_relationship_{C.ALIGN_EVENT}_2025.pdf"
         save_figure(fig, filename)
 
-    plt.show()
 
-# def main(mean_subtraction = False):
 
 if __name__ == "__main__":
     mean_subtraction = True #TODO:
-    # n_perm =1000
 
     if mean_subtraction:
         metrics_path = C.DATAPATH / "neural_metrics_summary_meansub.parquet"

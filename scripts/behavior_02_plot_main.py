@@ -24,7 +24,6 @@ from scipy import stats
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import seaborn as sns
-import pingouin as pg
 from scipy.stats import variation
 
 # === IBL / Brainbox Libraries ===
@@ -38,7 +37,6 @@ from scripts.utils.plot_utils import (
     plot_psychometric,
     plot_chronometric,
     map_p_value,
-    format_bf_annotation
 )
 from scripts.utils.behavior_utils import (
     create_trials_table,
@@ -48,7 +46,6 @@ from scripts.utils.behavior_utils import (
     compute_choice_history
 )
 from scripts.utils.data_utils import add_age_group, add_age_months, add_age_years
-
 from scripts.utils.behavior_utils import filter_trials
 from scripts.utils.io import read_table, save_figure
 # === Plotting Tools ===
@@ -61,6 +58,39 @@ one = ONE()
 figure_style()
 
 
+# === Text helper for BF / permutation annotation (no type hints) ===
+def format_bf_annotation(beta, p_perm, BF10, BF_conclusion, beta_label="age", big_bf=100):
+    """
+    Build the multiline annotation string used in scatter panels.
+
+    Parameters
+    ----------
+    beta : float
+    p_perm : float
+    BF10 : float
+    BF_conclusion : str
+    beta_label : str, default "age"
+        LaTeX subscript label for beta, e.g., 'age'.
+    big_bf : float, default 100
+        Threshold for using '> big_bf' instead of a numeric BF.
+
+    Returns
+    -------
+    str : formatted annotation string with two lines.
+    """
+    mapped = map_p_value(p_perm)  # uses your existing helper
+    # BF line: "> 100" if big enough, else numeric
+    if np.isfinite(BF10) and BF10 > big_bf:
+        bf_str = r"$BF_{\mathrm{10}} > " + f"{int(big_bf)}" + r", $"
+    else:
+        bf_str = r"$BF_{\mathrm{10}} = " + f"{BF10:.3f}" + r", $"
+
+    txt = (
+        r" $\beta_{\mathrm{" + beta_label + r"}} = " + f"{beta:.3f}, $" +
+        r"$p_{\mathrm{perm}} " + f"{mapped}" + r"$" +
+        "\n" + bf_str + f" {BF_conclusion}"
+    )
+    return txt
 
 # def plot_age_distribution(trials_table,  save_fig=True, session_based=False):
 #     """_summary_
@@ -84,7 +114,7 @@ figure_style()
 #             ax.yaxis.set_major_locator(mticker.MaxNLocator(integer=True))
 #         if save_fig:
 #             save_figure(fig, C.FIGPATH / "f1_distribution_age_allmice_sessionbased_2025.pdf")
-#         plt.show()
+#         #plt.show()()
 #     else:
 #         age_info = trials_table.groupby(['age_group', 'mouse_name'])[['age_months']].mean().reset_index()
 #         fig = sns.displot(
@@ -110,7 +140,7 @@ figure_style()
 #             sns.despine(offset=2, trim=False, ax=ax)
 #         if save_fig:
 #             save_figure(fig, C.FIGPATH / "f1b_distribution_age_allmice_mousebased_2025.pdf")
-#         plt.show()
+#         #plt.show()()
 def plot_age_distribution(trials_table, save_fig=True, session_based=False):
     """Plot age distribution (mouse-based or session-based).
 
@@ -176,7 +206,7 @@ def plot_age_distribution(trials_table, save_fig=True, session_based=False):
                 else "f1b_distribution_age_allmice_mousebased_2025.pdf"
         save_figure(g, C.FIGPATH / fname)
 
-    plt.show()
+    #plt.show()()
 
 
 # def plot_rt_distribution(trials_table, clean_rt=False, save_fig=True, easy_trials=False):
@@ -255,7 +285,7 @@ def plot_age_distribution(trials_table, save_fig=True, session_based=False):
 #     if save_fig:
 #         fname = f"f1_distribution_{'easy_trials_' if easy_trials else ''}rt_raw_2groups_2025.pdf"
 #         save_figure(fig, C.FIGPATH / fname)
-#     plt.show()
+#     #plt.show()()
 
 def plot_rt_distribution(trials_table, clean_rt=False, save_fig=True, easy_trials=False):
     """Histogram of raw RT by age group with cutoffs annotated.
@@ -353,7 +383,7 @@ def plot_rt_distribution(trials_table, clean_rt=False, save_fig=True, easy_trial
     if save_fig:
         fname = f"f1_distribution_{'easy_trials_' if easy_trials else ''}rt_raw_2groups_2025.pdf"
         save_figure(g, C.FIGPATH / fname)
-    plt.show()
+    #plt.show()()
 
 
 
@@ -580,6 +610,11 @@ def plot_psycho_paras_scatter(fit_psy_paras_age_info, permut_result_df, save_fig
         BF10= permut_result_df[permut_result_df['y_var'] == measure]['BF10'].values[0]
         BF_conclusion = permut_result_df[permut_result_df['y_var'] == measure]['BF_conclusion'].values[0]
         
+        mapped_p_value = map_p_value(p_perm)
+        # if BF10 > 100:
+        #     txt = fr" $\beta_{{\mathrm{{age}}}} = {beta:.3f}, $"+ f"$p_{{\\mathrm{{perm}}}} {mapped_p_value}$" +  f"\n$BF_{{\\mathrm{{10}}}} > 100, $" + f" {BF_conclusion}"
+        # else:
+        #     txt = fr" $\beta_{{\mathrm{{age}}}} = {beta:.3f}, $"+ f"$p_{{\\mathrm{{perm}}}} {mapped_p_value}$" +  f"\n$BF_{{\\mathrm{{10}}}} = {BF10:.3f}, $" + f" {BF_conclusion}"
         txt = format_bf_annotation(beta, p_perm, BF10, BF_conclusion, beta_label="age", big_bf=100)
 
         ax.text(0, 1, txt, transform=ax.transAxes, fontsize=3, linespacing=0.8, verticalalignment='top')
@@ -722,44 +757,40 @@ def main():
     trials_table['age_group'] = (trials_table['mouse_age'] > C.AGE_GROUP_THRESHOLD).map({True: "old", False: "young"})
     
     if trials_table is not None:
-        # # - b.histplot: age distribution
-        # plot_age_distribution(trials_table,  save_fig=True, session_based=False)
-        # # - c.psychometric function 
-        # plot_psychometric_curves(trials_table,  save_fig=True)
+        # - b.histplot: age distribution
+        plot_age_distribution(trials_table,  save_fig=True, session_based=False)
+        # - g.histplot: raw RT distribution in both groups
+        plot_rt_distribution(trials_table,  clean_rt=False, save_fig=True, easy_trials=False)
+        # - c.psychometric function 
+        plot_psychometric_curves(trials_table,  save_fig=True)
+        # #TODO:
+        # - d.chronometric function (MEDIAN RT) + scatterplot: Median RT with age
+        plot_chronometric_curves(trials_table,  clean_rt=True,rt_type = 'rt',
+                             save_fig=True)
+        # - e.chronometric function (RT variabiltiy) 
+        plot_chronometric_rt_variability(trials_table,  clean_rt=True,rt_type = 'rt',
+                                     y_var = 'rt_CV', save_fig=True)
 
-        # # #TODO:
-        # # - d.chronometric function (MEDIAN RT) + scatterplot: Median RT with age
-        # plot_chronometric_curves(trials_table,  clean_rt=True,rt_type = 'rt',
-        #                      save_fig=True)
-        # # - e.chronometric function (RT variabiltiy) 
-        # plot_chronometric_rt_variability(trials_table,  clean_rt=True,rt_type = 'rt',
-        #                              y_var = 'rt_CV', save_fig=True)
-
-        # #TODO: load fitted results
+        #TODO: load fitted results
         split_type = 'prevresp'#'block'
         # eid_unique = trials_table.eid.nunique()
         fit_psy_paras_age_info = read_table(C.RESULTSPATH / f"{split_type}_fit_psy_paras_age_info_367sessions_2025.csv")
-        
 
-        # label='psychometric'
-        # permut_result_df = read_table(C.RESULTSPATH / f'permutation_test_{label}_{C.AGE2USE}_{C.N_PERMUT_BEHAVIOR}perm_2025.csv')
-
-
-        # label='shift'
-        # permut_result_df = read_table(C.RESULTSPATH / f'permutation_test_{label}_{C.AGE2USE}_{C.N_PERMUT_BEHAVIOR}perm_2025.csv')
-
-        # plot_shift_paras_scatter(fit_psy_paras_age_info, permut_result_df, split_type=split_type, save_fig=True)
-        label='rt'
+        label='psychometric'
         permut_result_df = read_table(C.RESULTSPATH / f'permutation_test_{label}_{C.AGE2USE}_{C.N_PERMUT_BEHAVIOR}perm_2025.csv')
-        # plot_shift_paras_scatter(fit_psy_paras_age_info, permut_result_df, split_type=split_type, save_fig=True)
 
         # - c. scatter plot:  of 3 psychometric function measures
         plot_psycho_paras_scatter(fit_psy_paras_age_info, permut_result_df, save_fig=True)
+        label='shift'
+        permut_result_df = read_table(C.RESULTSPATH / f'permutation_test_{label}_{C.AGE2USE}_{C.N_PERMUT_BEHAVIOR}perm_2025.csv')
 
+        plot_shift_paras_scatter(fit_psy_paras_age_info, permut_result_df, split_type=split_type, save_fig=True)
+        label='rt'
+        permut_result_df = read_table(C.RESULTSPATH / f'permutation_test_{label}_{C.AGE2USE}_{C.N_PERMUT_BEHAVIOR}perm_2025.csv')
+        
         # - f.scatterplot: RT variability with age
         plot_rt_paras_scatter(fit_psy_paras_age_info, permut_result_df, save_fig=True)
-        # - g.histplot: raw RT distribution in both groups
-        plot_rt_distribution(trials_table,  clean_rt=False, save_fig=True, easy_trials=False)
+
 
 if __name__ == "__main__":
     main()

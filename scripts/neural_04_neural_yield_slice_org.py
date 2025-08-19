@@ -194,8 +194,6 @@ def plot_yield_by_region(df, permut_df, bf_df, y_var='n_cluster', save_fig=True)
         fig.savefig(C.FIGPATH / fname)
         print(f"Saved figure to {C.FIGPATH}/{fname}")
 
-    plt.show()
-
 
 if __name__ == "__main__":
     print("Loading data...")

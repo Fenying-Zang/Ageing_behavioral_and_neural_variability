@@ -1,9 +1,6 @@
 
 #%%
 import config as C
-# import warnings
-# warnings.simplefilter("default", DeprecationWarning)
-
 import pandas as pd
 import os
 import matplotlib.pyplot as plt
@@ -79,7 +76,7 @@ def plot_modulation_time_courses_pooled(df, y_col='frs', estimator='median', gra
         fname = f"Omnibus_group_modulation_{granularity}_{suffix}{y_col}_{estimator}_timecourse_{C.ALIGN_EVENT}_merged_noerrorbar.pdf"
         fig.savefig(os.path.join(C.FIGPATH, fname), dpi=300)
 
-    plt.show()
+    #plt.show()()
 
 def plot_modulation_time_courses_pooled_2groups(df, y_col='frs', estimator='mean', granularity='neuron_level', save=True):
     """
@@ -117,7 +114,7 @@ def plot_modulation_time_courses_pooled_2groups(df, y_col='frs', estimator='mean
         fname = f"Omnibus_group_modulation_{granularity}_{y_col}_{estimator}_timecourse_{C.ALIGN_EVENT}.pdf"
         fig.savefig(os.path.join(C.FIGPATH, fname), dpi=300)
 
-    plt.show()
+    #plt.show()()
 
 def plot_modulation_time_courses_by_region(df, y_col='frs', estimator='median', granularity='neuron_level', split_by_age=False, save=True):
     """
@@ -179,7 +176,7 @@ def plot_modulation_time_courses_by_region(df, y_col='frs', estimator='median', 
     if save:
         suffix = '2groups_' if split_by_age else ''
         fig.savefig(os.path.join(C.FIGPATH, f"Slice_org_modulation_{suffix}{y_col}_timecourse_{C.ALIGN_EVENT}_merged.pdf"), dpi=300)
-    plt.show()
+    #plt.show()()
 
 if __name__ == "__main__":
 
@@ -214,9 +211,3 @@ if __name__ == "__main__":
     # print(f"Plotting omnibus FFs contrast modulation time courses...") # split by age
     # plot_modulation_time_courses_pooled(df_cond, y_col='FFs', estimator='mean', granularity='neuron_level',split_by_age=True,  save=True)
 
-# %% TODO: 为什么0条件那么曲折离奇？是因为estimator选错了还是其他什么原因？
-# df = df_cond.copy()
-# df['FFs'] = df.groupby(['uuids', 'timepoints', 'abs_contrast'])['FFs'].transform('median')
-# df = df.drop_duplicates(subset=['uuids', 'timepoints', 'abs_contrast', 'FFs', 'age_group'])
-
-# df = baseline_correct(df, 'FFs', 'median')

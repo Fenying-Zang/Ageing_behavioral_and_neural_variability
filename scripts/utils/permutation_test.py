@@ -187,7 +187,7 @@ def plot_permut_test(null_dist, observed_val, p, mark_p, title=None):
 
     plt.tight_layout()
     plt.savefig("null dist")
-    plt.show()
+    #plt.show()()
 
 
 def example_metric(data, labels1, labels2):
@@ -288,7 +288,7 @@ def distribution_dist_approx_max(data, labs, mice, n=400, print_it=False, plot_i
         plt.gca().spines[['right', 'top']].set_visible(False)
         plt.tight_layout()
         plt.savefig("CA1 CDFs plus no title")
-        plt.show()
+        #plt.show()()
 
     return max(cdf_dists)
 
@@ -324,7 +324,7 @@ def distribution_dist_approx(data, labs, mice, n=400, print_it=False, plot_it=Fa
         plt.legend()
         plt.xlim(-5, 10)
         plt.title(title)
-        plt.show()
+        #plt.show()()
 
     return dist_sum
 
@@ -351,7 +351,7 @@ def power_test(n_simul, dist, labels1, labels2, diff_labels1, metric=distributio
                         shuffling=shuffling, n_permut=5000, plot=False)
         ps[i] = p
     # plt.hist(ps)
-    # plt.show()
+    # #plt.show()()
     return ps
 
 
