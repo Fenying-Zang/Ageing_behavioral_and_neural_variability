@@ -66,14 +66,14 @@ ageing_behavioral_and_neural_variability/
 ├── data/              # Intermediate or derived data (tracked via Git LFS)
 ├── scripts/           # Python scripts for analysis and plotting
 │   └── utils/         # Shared helper functions
-├── figures/           # Output figures
+├── figures_test/      # Output figures
 └── results/           # Output CSVs, summary tables
 ```
 
 ## Reproducing Figures
 
-- Clean up the `figures/` folder (optional).
-- Run `run_figs.py` script. This will generate all manuscript figures using intermediate `.parquet` and `.csv` files from the `data/` and `results/` folder.
+- Clean up the `figures_test/` folder (optional).
+- Run `run_figs.py` script and figures will be saved in the `figures_test/` folder. This will generate all manuscript figures using intermediate `.parquet` and `.csv` files from the `data/` and `results/` folder.
 - If you want to regenerate intermediate data from scratch, see the individual scripts in `scripts/`. #TODO:
 
 ## Data
