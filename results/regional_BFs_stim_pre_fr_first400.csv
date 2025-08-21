@@ -1,0 +1,17 @@
+,cluster_region,metric,formula_full,BF10_age,BF10_age_category,BF10_region,mean_contrast,low_ci_contrast,high_ci_contrast,mean_age,low_ci_age,high_ci_age,age_ci_conclusion,contrast_ci_conclusion
+0,MOs,pre_fr,log_pre_fr ~ age_years + abs_contrast + n_trials,1.4049797634987809e+45,strong H1,,,,,,,,True,True
+1,ACA,pre_fr,log_pre_fr ~ age_years + abs_contrast + n_trials,0.6172844372760852,weak H0,,,,,,,,True,True
+2,CP,pre_fr,log_pre_fr ~ age_years + abs_contrast + n_trials,6963801373.340028,strong H1,,,,,,,,True,True
+3,LS,pre_fr,log_pre_fr ~ age_years + abs_contrast + n_trials,0.11167431824194267,moderate H0,,,,,,,,True,True
+4,ACB,pre_fr,log_pre_fr ~ age_years + abs_contrast + n_trials,52.361827087585475,strong H1,,,,,,,,True,True
+5,mPFC,pre_fr,log_pre_fr ~ age_years + abs_contrast + n_trials,0.17260003287955558,moderate H0,,,,,,,,True,True
+6,ORB,pre_fr,log_pre_fr ~ age_years + abs_contrast + n_trials,0.1640608551270018,moderate H0,,,,,,,,True,True
+7,OLF,pre_fr,log_pre_fr ~ age_years + abs_contrast + n_trials,23.410510547036004,strong H1,,,,,,,,True,True
+8,VISp+pm,pre_fr,log_pre_fr ~ age_years + abs_contrast + n_trials,1.4097012520228774e+22,strong H1,,,,,,,,True,True
+9,SCm,pre_fr,log_pre_fr ~ age_years + abs_contrast + n_trials,0.38740367573622486,weak H0,,,,,,,,True,True
+10,MBm,pre_fr,log_pre_fr ~ age_years + abs_contrast + n_trials,584938.5785914272,strong H1,,,,,,,,True,True
+11,PPC,pre_fr,log_pre_fr ~ age_years + abs_contrast + n_trials,0.2998941384884925,moderate H0,,,,,,,,True,True
+12,CA1,pre_fr,log_pre_fr ~ age_years + abs_contrast + n_trials,1262389542645.0903,strong H1,,,,,,,,True,True
+13,DG,pre_fr,log_pre_fr ~ age_years + abs_contrast + n_trials,0.05150320509775207,strong H0,,,,,,,,True,True
+14,LP,pre_fr,log_pre_fr ~ age_years + abs_contrast + n_trials,8.608310750000069e+23,strong H1,,,,,,,,True,True
+15,PO,pre_fr,log_pre_fr ~ age_years + abs_contrast + n_trials,0.10164944382527959,moderate H0,,,,,,,,True,True

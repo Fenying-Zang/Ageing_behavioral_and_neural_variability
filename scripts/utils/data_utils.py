@@ -199,31 +199,24 @@ def interpret_bayes_factor(bf):
         return 'strong H0'
 
 
-
 def add_age_group(df):
-    """Return a copy with a categorical 'age_group' column based on C.AGE_GROUP_THRESHOLD."""
+    """Return a copy with a categorical 'age_group' column based on C.AGE_GROUP_THRESHOLD.
+    Accepts age column named either 'mouse_age' or 'mouse_Age_at_recording' (in days).
+    """
     out = df.copy()
-    out["age_group"] = (out["mouse_age"] > C.AGE_GROUP_THRESHOLD).map({True: "old", False: "young"})
+
+    if 'mouse_age' in out.columns:
+        age = out['mouse_age']
+    elif 'age_at_recording' in out.columns:
+        age = out['age_at_recording']
+    else:
+        raise KeyError("Expected 'mouse_age' or 'mouse_Age_at_recording' in DataFrame.")
+
+    out['age_group'] = (age > C.AGE_GROUP_THRESHOLD).map({True: 'old', False: 'young'})
+    out['age_months'] = age / 30
+    out['age_years'] = age / 365
+    
     return out
-
-def add_age_months(df):
-    """Return a copy with 'age_months' = mouse_age / 30."""
-    out = df.copy()
-    out["age_months"] = out["mouse_age"] / 30.0
-    return out
-
-
-def add_age_years(df):
-    """Return a copy with 'age_years' = mouse_age / 365."""
-    out = df.copy()
-    out["age_years"] = out["mouse_age"] / 365
-    return out
-
-
-
-
-
-
 
 
 

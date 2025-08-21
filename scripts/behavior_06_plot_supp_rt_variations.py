@@ -24,7 +24,8 @@ from statsmodels.genmod.families import Gaussian
 from statsmodels.genmod.families import Gamma
 from statsmodels.genmod.families.links import Log
 
-from scripts.utils.plot_utils import figure_style
+from scripts.utils.plot_utils import figure_style, format_bf_annotation
+
 from ibl_style.utils import get_coords, MM_TO_INCH, double_column_fig
 import figrid as fg
 
@@ -33,8 +34,8 @@ from scripts.utils.io import read_table
 from scripts.utils.behavior_utils import filter_trials
 from scripts.utils.plot_utils import map_p_value
 from scripts.utils.data_utils import shuffle_labels_perm, bf_gaussian_via_pearson, interpret_bayes_factor
-import config as C
-
+import config as C 
+from scripts.utils.stats_utils import get_permut_results_table
 # =====================
 # Tunables (script-local)
 # =====================
@@ -49,19 +50,10 @@ SHUFFLING = 'labels1_global'  # same as your other scripts
 
 
 # =====================
-# 1) Loading
-# =====================
-# def load_trials_table(path_or_pathlike) -> pd.DataFrame:
-#     df = pd.read_csv(path_or_pathlike)
-#     print(f"{df['eid'].nunique()} sessions loaded")
-#     return df
-
-
-# =====================
 # 2) Prepare data (filter + variability summary)
 # =====================
 def filter_for_rt(trials, rt_variable_name, exclude_nan_event_trials=True, clean_rt=True):
-    """Apply your standard trial filtering for a given RT definition."""
+    """Standard trial filtering for a given RT variable; adds age fields and log_rt; returns a copy."""
     df = filter_trials(
         trials,
         exclude_nan_event_trials=exclude_nan_event_trials,
@@ -101,89 +93,11 @@ def compute_subject_measures(group):
 
 
 def make_variability_summary(filtered_df):
-    """Group by session and compute variability metrics."""
+    """Per-session variability metrics (MAD/CV/SD of RT/log RT); one row per eid."""
     keys = ['eid', 'mouse_age', 'age_months', 'age_years', 'age_group']
     out = filtered_df.groupby(keys, as_index=False).apply(compute_subject_measures).reset_index(drop=True)
     print(f"{len(out)} sessions with variability measures")
     return out
-
-
-# =====================
-# 3) Permutation testing
-# =====================
-def _single_permutation(i, data, permuted_label, formula, family_func):
-    try:
-        shuffled = data.copy()
-        shuffled[C.AGE2USE] = permuted_label
-        model = glm(formula=formula, data=shuffled, family=family_func).fit()
-        return model.params[C.AGE2USE]
-    except Exception:
-        return np.nan
-
-
-def run_permutation_test(data: pd.DataFrame,
-                         age_labels: np.ndarray,
-                         formula: str,
-                         family_func,
-                         shuffling: str,
-                         n_permut: int,
-                         n_jobs: int,
-                         random_state: int = 123):
-    permuted_labels, _ = shuffle_labels_perm(
-        labels1=age_labels, labels2=None, shuffling=shuffling,
-        n_permut=n_permut, random_state=random_state, n_cores=min(4, n_jobs)
-    )
-    null_dist = Parallel(n_jobs=n_jobs)(
-        delayed(_single_permutation)(i, data, permuted_labels[i], formula, family_func)
-        for i in tqdm(range(n_permut), desc=f"Permuting {formula}")
-    )
-    null_dist = np.asarray(null_dist)
-    valid_null = null_dist[~np.isnan(null_dist)]
-
-    model = glm(formula=formula, data=data, family=family_func).fit()
-    observed = model.params[C.AGE2USE]
-    observed_p = model.pvalues[C.AGE2USE]
-    p_perm = (np.sum(np.abs(valid_null) >= np.abs(observed)) + 1) / (len(valid_null) + 1)
-    return observed, observed_p, p_perm, valid_null
-
-
-def get_or_compute_perm_results(rt_variable_name, variability_summary, measures=MEASURES, n_permut=C.N_PERMUT_BEHAVIOR):
-    """
-    Cache permutation results per RT definition; one row per measure.
-    """
-    out_csv = C.RESULTSPATH / f"2RT_defs_variability_{rt_variable_name}_{n_permut}permutation_2025.csv"
-    if out_csv.exists():
-        return pd.read_csv(out_csv)
-
-    rows = []
-    for measure in measures:
-        formula = f"{measure} ~ {C.AGE2USE}"
-        idx = ~np.isnan(variability_summary[measure])
-        df_fit = variability_summary.loc[idx].reset_index(drop=True)
-        age_vals = df_fit[C.AGE2USE].to_numpy()
-        observed, observed_p, p_perm, valid_null = run_permutation_test(
-            data=df_fit,
-            age_labels=age_vals,
-            formula=formula,
-            family_func=FAMILY_FUNC,
-            shuffling=SHUFFLING,
-            n_permut=n_permut,
-            n_jobs=N_JOBS,
-        )
-        print(f"[{rt_variable_name}] {measure}: beta={observed:.4f}, p_perm={p_perm:.4f}")
-        rows.append({
-            'rt_variable': rt_variable_name,
-            'y_var': measure,
-            'n_perm': n_permut,
-            'formula': formula,
-            'observed_val': observed,
-            'observed_val_p': observed_p,
-            'p_perm': p_perm,
-            'ave_null_dist': float(np.nanmean(valid_null))
-        })
-    res = pd.DataFrame(rows)
-    res.to_csv(out_csv, index=False)
-    return res
 
 
 # =====================
@@ -209,22 +123,16 @@ def build_figure_layout():
     return fig, axs
 
 
-def _fmt_stats_text(beta, p_perm, BF10, BF_conclusion):
-    """Safe mathtext: no '$$' from concatenation."""
-    mapped = map_p_value(p_perm)
-    first = rf"$\beta_{{\mathrm{{age}}}} = {beta:.3f},\ p_{{\mathrm{{perm}}}} {mapped}$"
-    second = (r"$BF_{10} > 100$" if BF10 > 100 else rf"$BF_{{10}} = {BF10:.3f}$")
-    return first + "\n" + second + f" {BF_conclusion}"
-
-
-def plot_rt_variation_panel(ax, variability_summary, measure, perm_df, rt_variable_name):
-    """Scatter/regression + annotation for one metric."""
+def plot_rt_variation_panel(ax, variability_summary, measure, perm_df):
+    """Scatter/regression + BF/perm annotation for one variability metric within an RT definition."""
     # pick the right axis key handled by caller; here just draw
-    beta = perm_df.loc[(perm_df['rt_variable'] == rt_variable_name) &
-                       (perm_df['y_var'] == measure), 'observed_val']
-    p_perm = perm_df.loc[(perm_df['rt_variable'] == rt_variable_name) &
-                         (perm_df['y_var'] == measure), 'p_perm']
-
+    # beta = perm_df.loc[(perm_df['rt_variable'] == rt_variable_name) &
+    #                    (perm_df['y_var'] == measure), 'observed_val']
+    # p_perm = perm_df.loc[(perm_df['rt_variable'] == rt_variable_name) &
+    #                      (perm_df['y_var'] == measure), 'p_perm']
+    
+    beta = perm_df.loc[perm_df['y_var'] == measure, 'observed_val']
+    p_perm = perm_df.loc[perm_df['y_var'] == measure, 'p_perm']
     beta = float(beta.iloc[0]) if len(beta) else np.nan
     p_perm = float(p_perm.iloc[0]) if len(p_perm) else np.nan
 
@@ -233,7 +141,8 @@ def plot_rt_variation_panel(ax, variability_summary, measure, perm_df, rt_variab
     BF10 = BF['BF10']
     BF_concl = interpret_bayes_factor(BF10)
 
-    txt = _fmt_stats_text(beta=beta, p_perm=p_perm, BF10=BF10, BF_conclusion=BF_concl)
+    txt = format_bf_annotation(beta, p_perm, BF10, BF_concl, beta_label="age", big_bf=100)
+
     ax.text(0.05, 1.05, txt, transform=ax.transAxes, fontsize=4, linespacing=0.8, va='top')
 
     do_reg = (BF_concl in ('strong H1', 'moderate H1'))
@@ -270,13 +179,26 @@ def main(save_fig: bool = True):
         var_sum = make_variability_summary(df_rt)
 
         # Permutation results (cached per RT definition)
-        perm_df = get_or_compute_perm_results(rt_var, var_sum, measures=MEASURES, n_permut=C.N_PERMUT_BEHAVIOR)
+        # perm_df = get_or_compute_perm_results(rt_var, var_sum, measures=MEASURES, n_permut=C.N_PERMUT_BEHAVIOR)
+        
+        out_csv = C.RESULTSPATH / f"t_2RT_defs_variability_{rt_var}_{C.N_PERMUT_BEHAVIOR}permutation_2025.csv"
+        perm_df = get_permut_results_table(
+            df=var_sum,
+            age_col=C.AGE2USE,                # e.g., 'age_years' or 'age_months'; utils will map to 'age_years'
+            measures=MEASURES,
+            family_func=FAMILY_FUNC,
+            shuffling=SHUFFLING,
+            n_permut=C.N_PERMUT_BEHAVIOR,
+            n_jobs=N_JOBS,
+            random_state=C.RANDOM_STATE,
+            filename=out_csv
+        )
 
         # Route to correct row of panels
         row_prefix = 'response' if rt_var == 'response_times_from_stim' else 'move'
         for measure in MEASURES:
             ax = axs[f"{row_prefix}_{measure}"]
-            plot_rt_variation_panel(ax, var_sum, measure, perm_df, rt_var)
+            plot_rt_variation_panel(ax, var_sum, measure, perm_df)
 
     fig.supxlabel('Age (months)', y=0.40)
     fig.supylabel(None)
@@ -290,4 +212,3 @@ def main(save_fig: bool = True):
 
 if __name__ == "__main__":
     main(save_fig=True)
-

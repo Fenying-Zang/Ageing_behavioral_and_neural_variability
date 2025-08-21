@@ -11,92 +11,56 @@ import seaborn as sns
 from scripts.utils.plot_utils import figure_style
 from ibl_style.utils import MM_TO_INCH
 import config as C
-from scripts.utils.plot_utils import create_slice_org_axes, map_p_value
+from scripts.utils.plot_utils import create_slice_org_axes, map_p_value, format_bf_annotation
 import figrid as fg
-from scripts.utils.data_utils import shuffle_labels_perm, bf_gaussian_via_pearson, interpret_bayes_factor
+from scripts.utils.data_utils import shuffle_labels_perm, bf_gaussian_via_pearson, interpret_bayes_factor, add_age_group
 from joblib import Parallel, delayed
 from statsmodels.genmod.families import Gaussian
 from statsmodels.formula.api import glm
 from tqdm import tqdm
 from scripts.utils.plot_utils import plot_permut_test
 from scripts.utils.io import read_table
+from scripts.utils.stats_utils import run_permutation_test
 
 def load_neural_yield_table():
+    """Load yield parquet, derive neural_yield, add age fields/group."""
     table = read_table(
         # os.path.join(C.DATAPATH, f'ibl_BWMLL_neural_yield_{C.ALIGN_EVENT}_{C.TRIAL_TYPE}_2025_merged.parquet'))
         os.path.join(C.DATAPATH, f'ibl_BWMLL_neural_yield_{C.ALIGN_EVENT}_{C.TRIAL_TYPE}_2025.parquet'))
 
     table['neural_yield'] = table['n_cluster'] / table['n_channel']
-    table['age_group'] = table['age_at_recording'].map(lambda x: 'old' if x > C.AGE_GROUP_THRESHOLD else 'young')
-    table['age_years'] = table['age_at_recording'] / 365
+    table = add_age_group(table)
     return table
 
-def single_permutation(i, data, permuted_label, formula2use, family_func):
-    try:
-        shuffled_data = data.copy()
-        shuffled_data['age_years'] = permuted_label
-
-        model = glm(formula=formula2use, data=shuffled_data, family=family_func).fit()
-        
-        return model.params["age_years"]
-    except Exception as e:
-        print(f"Permutation {i} failed: {e}")
-        return np.nan
-
-def run_permutation_test(data, this_age, formula2use, family_func, n_permut, n_jobs):
-
-    permuted_labels, _ = shuffle_labels_perm(
-        labels1=this_age,
-        labels2=None,
-        shuffling='labels1_global',
-        n_permut=n_permut,
-        random_state=123,
-        n_cores=n_jobs
-    )
-
-    null_dist = Parallel(n_jobs=n_jobs)(
-        delayed(single_permutation)(i, data, permuted_labels[i], formula2use, family_func)
-        for i in tqdm(range(n_permut))
-    )
-
-    null_dist = np.array(null_dist)
-    valid_null = null_dist[~np.isnan(null_dist)]
-
-    model_obs = glm(formula=formula2use, data=data, family=family_func).fit()
-    observed_val = model_obs.params["age_years"]
-    observed_val_p = model_obs.pvalues["age_years"]
-    p_perm = (np.sum(np.abs(valid_null) >= np.abs(observed_val)) + 1) / (len(valid_null) + 1)
-
-    return observed_val, observed_val_p, p_perm, valid_null
 
 def get_permut_results (y_var, age2use, neural_yield_table):
-    filename = C.RESULTSPATH / f"regional_{y_var}_{age2use}_{C.N_PERMUT_NEURAL_REGIONAL}permutation_NEW.csv"
+    filename = C.RESULTSPATH / f"t_regional_{y_var}_{age2use}_{C.N_PERMUT_NEURAL_REGIONAL}permutation.csv"
     if filename.exists():
         permut_df = pd.read_csv(filename)
     else:
-
-        # shuffling='labels1_global'#'labels1_based_on_2'
         family_func = Gaussian()
         formula2use = f"{y_var} ~ age_years"
         region_results = []
         for region in C.ROIS:
             print(f'Processing region {region}')
-            region_data = neural_yield_table[neural_yield_table['Beryl_merge']==region] 
-
+            region_data = neural_yield_table[neural_yield_table['Beryl_merge']==region]
             region_data = region_data[~ np.isnan(region_data[y_var])].reset_index(drop=True)
-            this_data = region_data[y_var].values
+
             this_age = region_data['age_years'].values
-            observed_val, observed_val_p, p_perm, valid_null = run_permutation_test(
+
+            observed_val, observed_val_p, p_perm, valid_null = run_permutation_test (
                 data=region_data,
-                this_age=this_age,
-                formula2use=formula2use,
+                age_labels=this_age,
+                formula=formula2use,           # 这里无需包含 C(cluster_region)
                 family_func=family_func,
+                shuffling='labels1_global',
                 n_permut=C.N_PERMUT_NEURAL_REGIONAL,
-                n_jobs=6
+                n_jobs=6,
+                random_state=C.RANDOM_STATE,
+                plot=False
             )
+
             print(f"results for {y_var}: \n  beta = {observed_val:.4f}, p_perm = {p_perm:.4f}")
-            # if plot_permt_result:
-            #     plot_permut_test(null_dist=valid_null, observed_val=observed_val, p=p_perm, mark_p=None, metric=y_var, save_path=C.FIGPATH, show=True, region=region)
 
             region_results.append({
                 'cluster_region': region,
@@ -106,16 +70,16 @@ def get_permut_results (y_var, age2use, neural_yield_table):
                 'observed_val': observed_val,
                 'observed_val_p': observed_val_p,
                 'p_perm': p_perm,
-                'ave_null_dist': valid_null.mean()
-            }) #  'null_dist': valid_nul
+                'ave_null_dist': valid_null.mean() if len(valid_null) else np.nan
+            })
 
         permut_df = pd.DataFrame(region_results)
-        permut_df.to_csv(filename, index=False) 
+        permut_df.to_csv(filename, index=False)
     return permut_df
 
 
 def get_bf_results(content, age2use, df):
-    filename = C.RESULTSPATH / f"regional_beyesfactor_{content}_NEW.csv"
+    filename = C.RESULTSPATH / f"t_regional_beyesfactor_{content}_NEW.csv"
     if filename.exists():
         BF_df = pd.read_csv(filename)
         # BF10 = BF_dict['BF10'].values[0]
@@ -162,14 +126,15 @@ def plot_yield_by_region(df, permut_df, bf_df, y_var='n_cluster', save_fig=True)
 
         beta = region_permut_df['observed_val'].values[0]
         p_perm = region_permut_df['p_perm'].values[0]
-        p_perm_mapped = map_p_value(p_perm)
+        # p_perm_mapped = map_p_value(p_perm)
         BF10 = result_bf_df['BF10'].values[0]
         BF_conclusion = result_bf_df['BF_conclusion'].values[0]
 
-        if BF10 > 100:
-            txt = fr" $\beta_{{\mathrm{{age}}}} = {beta:.3f}, $"+ f"$p_{{\\mathrm{{perm}}}} {p_perm_mapped}$" +  f"\n$BF_{{\\mathrm{{10}}}} > 100, $" + f" {BF_conclusion}"
-        else:
-            txt = fr" $\beta_{{\mathrm{{age}}}} = {beta:.3f}, $"+ f"$p_{{\\mathrm{{perm}}}} {p_perm_mapped}$" +  f"\n$BF_{{\\mathrm{{10}}}} = {BF10:.3f}, $" + f" {BF_conclusion}"
+        # if BF10 > 100:
+        #     txt = fr" $\beta_{{\mathrm{{age}}}} = {beta:.3f}, $"+ f"$p_{{\\mathrm{{perm}}}} {p_perm_mapped}$" +  f"\n$BF_{{\\mathrm{{10}}}} > 100, $" + f" {BF_conclusion}"
+        # else:
+        #     txt = fr" $\beta_{{\mathrm{{age}}}} = {beta:.3f}, $"+ f"$p_{{\\mathrm{{perm}}}} {p_perm_mapped}$" +  f"\n$BF_{{\\mathrm{{10}}}} = {BF10:.3f}, $" + f" {BF_conclusion}"
+        txt = format_bf_annotation(beta, p_perm, BF10, BF_conclusion, beta_label="age", big_bf=100)
 
         ax.text(0.05, 1.2, txt, transform=ax.transAxes, fontsize=4, verticalalignment='top', linespacing=0.8)
 
@@ -194,6 +159,8 @@ def plot_yield_by_region(df, permut_df, bf_df, y_var='n_cluster', save_fig=True)
         fig.savefig(C.FIGPATH / fname)
         print(f"Saved figure to {C.FIGPATH}/{fname}")
 
+    #plt.show()()
+
 
 if __name__ == "__main__":
     print("Loading data...")
@@ -205,3 +172,5 @@ if __name__ == "__main__":
         plot_yield_by_region(neural_yield_table, permut_df, bf_df, y_var)
 
 
+
+# %%

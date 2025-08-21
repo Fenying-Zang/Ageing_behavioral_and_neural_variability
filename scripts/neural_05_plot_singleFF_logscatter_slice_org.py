@@ -77,6 +77,12 @@ def plot_singleFF_mean_var(df, timepoint, save=True):
                 slope, _, _, _ = np.linalg.lstsq(x[:, np.newaxis], y, rcond=None)
                 slope = slope[0]
                 
+                # Draw line (manual, from (0.01, 0.01*slope) to (100, 100*slope))
+                # xs = np.array([0.01, 100])
+                # ys = xs * slope
+                # ax.plot(xs, ys, color=palette[group], linewidth=0.5)
+
+                # xs = np.logspace(0.01, 1000, 1000)
                 if slope < 1:
                     ax.plot([0.01, 100], [0.01, 100*slope], color=C.PALETTE[group], linewidth=0.5)
                 else:
@@ -115,14 +121,20 @@ def plot_singleFF_mean_var(df, timepoint, save=True):
         elif timepoint==C.POST_TIME:
             save_figure(fig,C.FIGPATH / f"single_FF_logscatter_post-stim_{C.ALIGN_EVENT}.pdf")
 
+    #plt.show()()
 
-if __name__ == "__main__":
-
+def main():
+    
     print("Loading df_all_conditions...")
-    df_cond_path = C.DATAPATH / f"ibl_BWMLL_FFs_{C.ALIGN_EVENT}_{C.TRIAL_TYPE}_conditions_2025.parquet"
+    df_cond_path = C.DATAPATH / f"ibl_BWMLL_FFs_{C.ALIGN_EVENT}_{C.TRIAL_TYPE}_conditions_2025_merged.parquet"
     df_cond = read_table(df_cond_path)
     df_cond['age_group'] = df_cond['mouse_age'].map(lambda x: 'old' if x > C.AGE_GROUP_THRESHOLD else 'young')
     
     print("Plotting FF mean vs FF var...")
     plot_singleFF_mean_var(df_cond, C.PRE_TIME, save=True)
     plot_singleFF_mean_var(df_cond, C.POST_TIME, save=True)
+
+if __name__ == "__main__":
+    main()
+
+

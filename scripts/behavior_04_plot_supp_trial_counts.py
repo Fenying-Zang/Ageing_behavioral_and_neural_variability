@@ -13,16 +13,16 @@ from one.api import ONE
 import pandas as pd
 import numpy as np
 import seaborn as sns
-from joblib import Parallel, delayed
+# from joblib import Parallel, delayed
 from statsmodels.genmod.families import Gaussian
 from statsmodels.formula.api import glm
 from tqdm import tqdm
 from scripts.utils.behavior_utils import filter_trials
-from scripts.utils.plot_utils import plot_permut_test, map_p_value
+from scripts.utils.plot_utils import plot_permut_test, map_p_value, format_bf_annotation
 from scripts.utils.data_utils import shuffle_labels_perm, bf_gaussian_via_pearson, interpret_bayes_factor
 from scripts.utils.io import read_table, save_figure
 import config as C
-from scripts.utils.stats_utils import single_permutation, run_permutation_test
+from scripts.utils.stats_utils import run_permutation_test, get_bf_results, get_permut_results
 
 one = ONE()
 # Define the default styling used for figures
@@ -47,110 +47,10 @@ def setup_fig_axes(fg, MM_TO_INCH, fig=None):
     }
     return fig, axs
 
-def single_permutation(i, data, permuted_label, formula2use, family_func):
-    try:
-        shuffled_data = data.copy()
-        shuffled_data['age_years'] = permuted_label
-
-        model = glm(formula=formula2use, data=shuffled_data, family=family_func).fit()
-        
-        return model.params["age_years"]
-    except Exception as e:
-        print(f"Permutation {i} failed: {e}")
-        return np.nan
-
-def run_permutation_test(data, this_age, formula2use, family_func, n_permut, n_jobs):
-
-    permuted_labels, _ = shuffle_labels_perm(
-        labels1=this_age,
-        labels2=None,
-        shuffling='labels1_global',
-        n_permut=n_permut,
-        random_state=123,
-        n_cores=n_jobs
-    )
-
-    null_dist = Parallel(n_jobs=n_jobs)(
-        delayed(single_permutation)(i, data, permuted_labels[i], formula2use, family_func)
-        for i in tqdm(range(n_permut))
-    )
-
-    null_dist = np.array(null_dist)
-    valid_null = null_dist[~np.isnan(null_dist)]
-
-    model_obs = glm(formula=formula2use, data=data, family=family_func).fit()
-    observed_val = model_obs.params["age_years"]
-    observed_val_p = model_obs.pvalues["age_years"]
-    p_perm = (np.sum(np.abs(valid_null) >= np.abs(observed_val)) + 1) / (len(valid_null) + 1)
-
-    return observed_val, observed_val_p, p_perm, valid_null
-
-
-def get_bf_results(content, df, age2use):
-    filename = C.RESULTSPATH / f"beyesfactor_{content}_trials.csv"
-    if filename.exists():
-        BF_dict = pd.read_csv(filename)
-        BF10 = BF_dict['BF10'].values[0]
-        BF_conclusion = BF_dict['BF_conclusion'].values[0]
-    else:
-
-        BF_dict = bf_gaussian_via_pearson(df, 'n_trials', age2use)
-        print(f"BF10 for {content} vs. {age2use}: {BF_dict['BF10']:.3f}")
-        BF10 = BF_dict['BF10']
-        BF_conclusion = interpret_bayes_factor(BF10)
-        bf_df = pd.DataFrame({
-            'y_col': content,
-            'BF10': BF10,
-            'BF_conclusion': BF_conclusion
-        }, index=[0])
-        bf_df.to_csv(filename, index=False)
-    return BF10, BF_conclusion
-
-
-def get_permut_results (content, age2use, df):
-
-    filename = C.RESULTSPATH / f"num_{content}_trials_{age2use}_{C.N_PERMUT_BEHAVIOR}permutation.csv"
-    if filename.exists():
-        permut_df = pd.read_csv(filename)
-        p_perm = permut_df['p_perm'].values[0]
-        observed_val = permut_df['observed_val'].values[0]
-    else:
-        formula2use = f"n_trials ~ {age2use} "
-        this_age = df[age2use].values
-        family_func = Gaussian()
-        observed_val, observed_val_p, p_perm, valid_null = run_permutation_test(
-            data=df,
-            this_age=this_age,
-            formula2use=formula2use,
-            family_func=family_func,
-            n_permut=C.N_PERMUT_BEHAVIOR,
-            n_jobs=6
-        )
-        print(f"Omnibus results for num_{content}_trials: \n  beta = {observed_val:.4f}, p_perm = {p_perm:.4f}")
-        # if plot_permt_result:
-        #     plot_permut_test(null_dist=valid_null, observed_val=observed_val, p=p_perm, mark_p=None, metric=y_var, save_path=C.FIGPATH, show=True, region=region)
-
-        permut_df = pd.DataFrame({
-            'y_col': content,
-            'n_perm': C.N_PERMUT_BEHAVIOR,
-            'formula': formula2use,
-            'observed_val': observed_val,
-            'observed_val_p': observed_val_p,
-            'p_perm': p_perm,
-            'ave_null_dist': valid_null.mean()
-        }, index=[0]) 
-        permut_df.to_csv(filename, index=False)
-    return p_perm, observed_val
-
 
 def plot_single_scatterplot(df, ax, p_perm, observed_val, BF10, BF_conclusion=None):   
     
-    p_perm_mapped = map_p_value(p_perm)
-
-    if BF10 > 100:
-        txt = fr" $\beta_{{\mathrm{{age}}}} = {observed_val:.3f}, $"+ f"$p_{{\\mathrm{{perm}}}} {p_perm_mapped}$" +  f"\n$BF_{{\\mathrm{{10}}}} > 100, $" + f" {BF_conclusion}"
-    else:
-        txt = fr" $\beta_{{\mathrm{{age}}}} = {observed_val:.3f}, $"+ f"$p_{{\\mathrm{{perm}}}} {p_perm_mapped}$" +  f"\n$BF_{{\\mathrm{{10}}}} = {BF10:.3f}, $" + f" {BF_conclusion}"
+    txt = format_bf_annotation(observed_val, p_perm, BF10, BF_conclusion, beta_label="age", big_bf=100)
 
     ax.text(0.05, 1.1, txt, transform=ax.transAxes, fontsize=6, verticalalignment='top')
 
@@ -195,8 +95,11 @@ def main(save_fig=True):
                                     ).reset_index()
         num_trials_df['age_months'] = num_trials_df['mouse_age']/30
         num_trials_df['age_years'] = num_trials_df['mouse_age']/365
-        p_perm, observed_val = get_permut_results(content, age2use='age_years', df=num_trials_df) #TODO: 
-        BF10, BF_conclusion = get_bf_results(content, df=num_trials_df, age2use='age_years')
+        age2use='age_years'
+        permut_filename = C.RESULTSPATH / f"t_num_{content}_trials_{age2use}_{C.N_PERMUT_BEHAVIOR}permutation.csv"
+        p_perm, observed_val = get_permut_results(content, age2use='age_years', df=num_trials_df, filename=permut_filename) #TODO: 
+        BF_filename = C.RESULTSPATH / f"t_beyesfactor_{content}_trials.csv"
+        BF10, BF_conclusion = get_bf_results(content, df=num_trials_df, age2use='age_years', filename=BF_filename)
         ax = plot_single_scatterplot(num_trials_df, ax, p_perm, observed_val, BF10, BF_conclusion)
     
     ax = axs['scatter_num_exc_trials']

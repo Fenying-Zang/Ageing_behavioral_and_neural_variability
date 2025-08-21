@@ -1,0 +1,17 @@
+,cluster_region,metric,formula_full,BF10_age,BF10_age_category,BF10_region,mean_contrast,low_ci_contrast,high_ci_contrast,mean_age,low_ci_age,high_ci_age,age_ci_conclusion,contrast_ci_conclusion
+0,MOs,fr_delta_modulation,fr_delta_modulation ~ age_years + n_trials,5.121206418310985,moderate H1,,,,,,,,True,True
+1,ACA,fr_delta_modulation,fr_delta_modulation ~ age_years + n_trials,0.22922855320450805,moderate H0,,,,,,,,True,True
+2,CP,fr_delta_modulation,fr_delta_modulation ~ age_years + n_trials,0.10428888615280597,moderate H0,,,,,,,,True,True
+3,LS,fr_delta_modulation,fr_delta_modulation ~ age_years + n_trials,0.1793317891025208,moderate H0,,,,,,,,True,True
+4,ACB,fr_delta_modulation,fr_delta_modulation ~ age_years + n_trials,0.28749169898762816,moderate H0,,,,,,,,True,True
+5,mPFC,fr_delta_modulation,fr_delta_modulation ~ age_years + n_trials,0.15998022060363015,moderate H0,,,,,,,,True,True
+6,ORB,fr_delta_modulation,fr_delta_modulation ~ age_years + n_trials,0.15367806572616483,moderate H0,,,,,,,,True,True
+7,OLF,fr_delta_modulation,fr_delta_modulation ~ age_years + n_trials,0.20088781518082402,moderate H0,,,,,,,,True,True
+8,VISp+pm,fr_delta_modulation,fr_delta_modulation ~ age_years + n_trials,1.44412733310701,weak H1,,,,,,,,True,True
+9,SCm,fr_delta_modulation,fr_delta_modulation ~ age_years + n_trials,1.572882508514773,weak H1,,,,,,,,True,True
+10,MBm,fr_delta_modulation,fr_delta_modulation ~ age_years + n_trials,1.132494135519251,weak H1,,,,,,,,True,True
+11,PPC,fr_delta_modulation,fr_delta_modulation ~ age_years + n_trials,0.27023120921200533,moderate H0,,,,,,,,True,True
+12,CA1,fr_delta_modulation,fr_delta_modulation ~ age_years + n_trials,0.9347986954120653,weak H0,,,,,,,,True,True
+13,DG,fr_delta_modulation,fr_delta_modulation ~ age_years + n_trials,8239.08497188175,strong H1,,,,,,,,True,True
+14,LP,fr_delta_modulation,fr_delta_modulation ~ age_years + n_trials,0.09266703171759921,strong H0,,,,,,,,True,True
+15,PO,fr_delta_modulation,fr_delta_modulation ~ age_years + n_trials,0.2153043764962305,moderate H0,,,,,,,,True,True

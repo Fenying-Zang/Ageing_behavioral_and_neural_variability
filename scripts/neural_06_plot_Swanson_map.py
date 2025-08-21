@@ -15,6 +15,7 @@ from matplotlib.colors import LinearSegmentedColormap
 from iblatlas.plots import plot_swanson_vector
 from iblatlas.atlas import BrainRegions
 from scripts.utils.plot_utils import figure_style
+from scripts.utils.io import read_table
 import config as C
 
 br = BrainRegions()
@@ -43,17 +44,25 @@ def region_table(beryl_names):
 def load_stats_results(y_col, mean_subtraction=False, n_permut=C.N_PERMUT_NEURAL_REGIONAL):
     suffix = 'meansub' if mean_subtraction else ''
     if y_col in ['ff_quench','fr_delta_modulation', 'ff_quench_modulation']:
-        fname = f'Regional_{y_col}_{n_permut}permutation_{C.ALIGN_EVENT}_{C.TRIAL_TYPE}_{suffix}_2025.csv'
+        fname = f'Regional_{y_col}_{n_permut}permutation_{C.ALIGN_EVENT}_{C.TRIAL_TYPE}_{suffix}.csv'
     else:
-        fname = f'Regional_{y_col}_{n_permut}permutation_{C.ALIGN_EVENT}_{C.TRIAL_TYPE}_{suffix}_2025.csv'
-    return pd.read_csv(C.RESULTSPATH / fname)
+        fname = f'Regional_{y_col}_{n_permut}permutation_{C.ALIGN_EVENT}_{C.TRIAL_TYPE}_{suffix}.csv'
+    return read_table(C.RESULTSPATH / fname)
 
+# def get_vmin_vmax(metric):
+#     ranges = {
+#         'pre_fr': (-1, 1), 'post_fr': (-1, 1),
+#         'fr_delta_modulation': (-4, 4),
+#         'pre_ff': (-0.4, 0.4), 'post_ff': (-0.4, 0.4),
+#         'ff_quench': (-0.4, 0.4), 'ff_quench_modulation': (-0.6, 0.6)
+#     }
+#     return ranges.get(metric, (-1, 1))
 def get_vmin_vmax(metric):
     ranges = {
-        'pre_fr': (-1, 1), 'post_fr': (-1, 1),
-        'fr_delta_modulation': (-4, 4),
-        'pre_ff': (-0.4, 0.4), 'post_ff': (-0.4, 0.4),
-        'ff_quench': (-0.4, 0.4), 'ff_quench_modulation': (-0.6, 0.6)
+        'pre_fr': (-0.5, 0.5), 'post_fr': (-0.5, 0.5),
+        'fr_delta_modulation': (-3, 3),
+        'pre_ff': (-0.2, 0.2), 'post_ff': (-0.2, 0.2),
+        'ff_quench': (-0.2, 0.2), 'ff_quench_modulation': (-0.5, 0.5)
     }
     return ranges.get(metric, (-1, 1))
 
@@ -106,7 +115,6 @@ def main(mean_subtraction=False):
 
 
 if __name__ == "__main__":
-
     main(mean_subtraction=False)
 
 

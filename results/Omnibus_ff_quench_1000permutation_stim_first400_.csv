@@ -1,0 +1,2 @@
+y_col,n_perm,formula,observed_val,observed_val_p,p_perm,ave_null_dist
+ff_quench,1000,ff_quench ~ age_years + C(cluster_region) + abs_contrast + n_trials,0.07235371384944375,3.5601681212099915e-20,0.005994005994005994,-0.0004978053582895952

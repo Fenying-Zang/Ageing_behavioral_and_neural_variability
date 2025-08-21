@@ -12,19 +12,8 @@ import seaborn as sns
 from ibl_style.utils import MM_TO_INCH
 from scripts.utils.plot_utils import figure_style
 import config as C
-from scripts.utils.plot_utils import create_slice_org_axes
-from scripts.utils.io import read_table
-
-
-def load_timecourse_data(df_path):
-    """
-    Load df_all_conditions containing FF and FR timecourses.
-    """
-    return read_table(df_path)
-
-
-def get_suffix(mean_subtraction):
-    return 'meansub' if mean_subtraction else ''
+from scripts.utils.plot_utils import create_slice_org_axes, add_window_label
+from scripts.utils.io import read_table, get_suffix
 
 
 def plot_time_courses_pooled(df, y_col='frs', estimator='mean',
@@ -54,13 +43,16 @@ def plot_time_courses_pooled(df, y_col='frs', estimator='mean',
             font="Arial", fontsize=6, c=C.PALETTE['young'])
 
     ax.axvline(x=0,  lw=0.5, alpha=0.8, c='gray')
-    ax.axvspan(-0.1, 0, facecolor='gray', alpha=0.1)
-    ax.axvspan(0.16, 0.26, facecolor='gray', alpha=0.1)
+    # ax.axvspan(-0.1, 0, facecolor='gray', alpha=0.1)
+    # ax.axvspan(0.16, 0.26, facecolor='gray', alpha=0.1)
+
+    add_window_label(ax, -0.1, 0.0,  'pre',  location='outside')
+    add_window_label(ax, 0.16, 0.26, 'post', location='outside')
 
     ax.set_xlim(-0.2, 0.8)
     ax.set_xlabel("Time from stimulus onset (s)", font="Arial", fontsize=8)
     ax.set_ylabel(f'{estimator} {y_col} ', font="Arial", fontsize=8)
-    ax.set_title(f"{granularity}, {y_col}; {errorbar}", font="Arial", fontsize=8)
+    # ax.set_title(f"{granularity}, {y_col}; {errorbar}", font="Arial", fontsize=8)
 
     sns.despine(offset=2, trim=False, ax=ax)
     plt.tight_layout()
@@ -103,13 +95,21 @@ def plot_time_courses_by_region(df, y_col='frs', estimator='mean',errorbar = ('c
             ax.text(0.7, 0.84, f"{num_datapoints['old']}", transform=ax.transAxes,
                     fontsize=6, color=C.PALETTE['old'])
         if 'young' in num_datapoints:
-            ax.text(0.7, 1.0, f"{num_datapoints['young']}", transform=ax.transAxes,
+            ax.text(0.7, 1.1, f"{num_datapoints['young']}", transform=ax.transAxes,
                     fontsize=6, color=C.PALETTE['young'])
 
         # Visual aids
         ax.axvline(x=0, lw=0.5, alpha=0.8, c='gray')
-        ax.axvspan(-0.1, 0, facecolor='gray', alpha=0.1)
-        ax.axvspan(0.16, 0.26, facecolor='gray', alpha=0.1)
+        # ax.axvspan(-0.1, 0, facecolor='gray', alpha=0.1)
+        # ax.axvspan(0.16, 0.26, facecolor='gray', alpha=0.1)
+        if region == 'MOs':
+            add_window_label(ax, -0.1, 0.0,  'pre',  location='outside', lw=0.7, fontsize=6)
+            add_window_label(ax, 0.16, 0.26, 'post', location='outside', lw=0.7, fontsize=6)
+        else:
+            add_window_label(ax, -0.1, 0.0,  '', location='outside', lw=0.7, fontsize=6)
+            add_window_label(ax, 0.16, 0.26, '', location='outside', lw=0.7, fontsize=6)
+ 
+
         ax.set_xlim(-0.2, 0.8)
 
         sns.despine(offset=2, trim=False, ax=ax)
@@ -122,7 +122,7 @@ def plot_time_courses_by_region(df, y_col='frs', estimator='mean',errorbar = ('c
         ax.set_ylabel("")
 
     # Final figure settings
-    fig.suptitle(f'{granularity} {estimator} {y_col} time course', fontsize=8)
+    # fig.suptitle(f'{granularity} {estimator} {y_col} time course', fontsize=8)
     if C.ALIGN_EVENT == 'stim':
         fig.supxlabel('Time from stimulus onset (s)', fontsize=8).set_y(0.35)
     else:
@@ -144,7 +144,7 @@ def main(mean_subtraction=True):
         df_cond_path = C.DATAPATH / f"ibl_BWMLL_FFs_{C.ALIGN_EVENT}_{C.TRIAL_TYPE}_conditions_2025.parquet"
 
     print(f"Loading {get_suffix(mean_subtraction)} df_all_conditions...")
-    df_cond = load_timecourse_data(df_cond_path)
+    df_cond = read_table(df_cond_path)
     df_cond['age_group'] = df_cond['mouse_age'].map(lambda x: 'old' if x > C.AGE_GROUP_THRESHOLD else 'young')
 
     print(f"Plotting {get_suffix(mean_subtraction)} pooled frs time courses...")
@@ -170,4 +170,6 @@ def main(mean_subtraction=True):
 
 if __name__ == "__main__":
 
-    main(mean_subtraction=True)
+    main(mean_subtraction=False)
+
+# %%

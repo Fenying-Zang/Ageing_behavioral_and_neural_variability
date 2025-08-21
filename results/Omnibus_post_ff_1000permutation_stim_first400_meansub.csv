@@ -1,0 +1,2 @@
+y_col,n_perm,formula,observed_val,observed_val_p,p_perm,ave_null_dist
+post_ff,1000,log_post_ff ~ age_years + C(cluster_region) + n_trials,0.05668779302222637,7.991984705404189e-06,0.03296703296703297,-0.001663064262486516

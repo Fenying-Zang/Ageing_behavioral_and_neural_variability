@@ -413,3 +413,35 @@ def format_bf_annotation(beta, p_perm, BF10, BF_conclusion, beta_label="age", bi
         "\n" + bf_str + f" {BF_conclusion}"
     )
     return txt
+
+
+import matplotlib.transforms as mtransforms
+
+def add_window_label(ax, x_start, x_end, label, *,
+                     location='outside',               # 'inside' or 'outside'
+                     line_pad=0.02,                    # 与顶边的间距（轴坐标单位）
+                     text_pad=0.015,                   # 文字相对横线再往上的间距（轴坐标单位）
+                     lw=1, fontsize=7):
+    """
+    在时间窗 [x_start, x_end] 上方画黑线并标注 label。
+    x 用数据坐标；y 用轴坐标（0-1），对版式最稳。
+    """
+    # y 的基准：inside 用 1 - line_pad，outside 用 1 + line_pad
+    if location == 'inside':
+        y_line = 1.0 - line_pad
+    else:
+        y_line = 1.0 + line_pad
+
+    # 混合坐标：x -> data, y -> axes
+    trans = mtransforms.blended_transform_factory(ax.transData, ax.transAxes)
+
+    # 横线
+    ax.plot([x_start, x_end], [y_line, y_line],
+            transform=trans, color='k', lw=lw, clip_on=False)
+
+    # 文本（居中）
+    label_fmt = rf'$\it{{{label}}}$'
+    ax.text((x_start + x_end)/2, y_line + (text_pad if location=='outside' else -text_pad),
+            label_fmt, transform=trans, ha='center',
+            va=('bottom' if location=='outside' else 'top'),
+            fontsize=fontsize, clip_on=False)

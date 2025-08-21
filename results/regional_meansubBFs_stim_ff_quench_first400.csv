@@ -1,0 +1,17 @@
+,cluster_region,metric,formula_full,BF10_age,BF10_age_category,BF10_region,mean_contrast,low_ci_contrast,high_ci_contrast,mean_age,low_ci_age,high_ci_age,age_ci_conclusion
+0,MOs,ff_quench,ff_quench ~ age_years + n_trials,15.813468170541402,strong H1,,,,,,,,True
+1,ACA,ff_quench,ff_quench ~ age_years + n_trials,0.5366703442621316,weak H0,,,,,,,,True
+2,CP,ff_quench,ff_quench ~ age_years + n_trials,0.1301493615147905,moderate H0,,,,,,,,True
+3,LS,ff_quench,ff_quench ~ age_years + n_trials,641.28776815737,strong H1,,,,,,,,True
+4,ACB,ff_quench,ff_quench ~ age_years + n_trials,3.172546780878349,moderate H1,,,,,,,,True
+5,mPFC,ff_quench,ff_quench ~ age_years + n_trials,0.2394615022151702,moderate H0,,,,,,,,True
+6,ORB,ff_quench,ff_quench ~ age_years + n_trials,0.3051322659601447,moderate H0,,,,,,,,True
+7,OLF,ff_quench,ff_quench ~ age_years + n_trials,1.8377467406347459,weak H1,,,,,,,,True
+8,VISp+pm,ff_quench,ff_quench ~ age_years + n_trials,76.6067475390642,strong H1,,,,,,,,True
+9,SCm,ff_quench,ff_quench ~ age_years + n_trials,0.6192414299161346,weak H0,,,,,,,,True
+10,MBm,ff_quench,ff_quench ~ age_years + n_trials,0.12101801455954808,moderate H0,,,,,,,,True
+11,PPC,ff_quench,ff_quench ~ age_years + n_trials,0.17042326521839404,moderate H0,,,,,,,,True
+12,CA1,ff_quench,ff_quench ~ age_years + n_trials,0.43216518016092437,weak H0,,,,,,,,True
+13,DG,ff_quench,ff_quench ~ age_years + n_trials,0.14894576604831733,moderate H0,,,,,,,,True
+14,LP,ff_quench,ff_quench ~ age_years + n_trials,3.29567367853462,moderate H1,,,,,,,,True
+15,PO,ff_quench,ff_quench ~ age_years + n_trials,0.10492404952915539,moderate H0,,,,,,,,True

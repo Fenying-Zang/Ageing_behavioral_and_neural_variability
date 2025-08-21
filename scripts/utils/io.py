@@ -21,6 +21,7 @@ def read_table(path: Path, *, engine: str | None = None) -> pd.DataFrame:
         return pd.read_parquet(p, engine=engine or "pyarrow")
     if suffix in (".csv", ".txt"):
         return pd.read_csv(p)
+
     raise ValueError(f"Unsupported file extension for {p.name}")
 
 
@@ -37,3 +38,5 @@ def save_figure(fig: plt.Figure, path: Path, *, dpi: int = 500, transparent: boo
     fig.savefig(p, dpi=dpi, transparent=transparent, bbox_inches="tight")
     print(f"[Saved figure] {p.resolve()}")
 
+def get_suffix(mean_subtraction):
+    return 'meansub' if mean_subtraction else ''

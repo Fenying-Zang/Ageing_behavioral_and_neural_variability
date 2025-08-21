@@ -24,6 +24,7 @@ from scipy import stats
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import seaborn as sns
+import pingouin as pg
 from scipy.stats import variation
 
 # === IBL / Brainbox Libraries ===
@@ -58,39 +59,39 @@ one = ONE()
 figure_style()
 
 
-# === Text helper for BF / permutation annotation (no type hints) ===
-def format_bf_annotation(beta, p_perm, BF10, BF_conclusion, beta_label="age", big_bf=100):
-    """
-    Build the multiline annotation string used in scatter panels.
+# # === Text helper for BF / permutation annotation (no type hints) ===
+# def format_bf_annotation(beta, p_perm, BF10, BF_conclusion, beta_label="age", big_bf=100):
+#     """
+#     Build the multiline annotation string used in scatter panels.
 
-    Parameters
-    ----------
-    beta : float
-    p_perm : float
-    BF10 : float
-    BF_conclusion : str
-    beta_label : str, default "age"
-        LaTeX subscript label for beta, e.g., 'age'.
-    big_bf : float, default 100
-        Threshold for using '> big_bf' instead of a numeric BF.
+#     Parameters
+#     ----------
+#     beta : float
+#     p_perm : float
+#     BF10 : float
+#     BF_conclusion : str
+#     beta_label : str, default "age"
+#         LaTeX subscript label for beta, e.g., 'age'.
+#     big_bf : float, default 100
+#         Threshold for using '> big_bf' instead of a numeric BF.
 
-    Returns
-    -------
-    str : formatted annotation string with two lines.
-    """
-    mapped = map_p_value(p_perm)  # uses your existing helper
-    # BF line: "> 100" if big enough, else numeric
-    if np.isfinite(BF10) and BF10 > big_bf:
-        bf_str = r"$BF_{\mathrm{10}} > " + f"{int(big_bf)}" + r", $"
-    else:
-        bf_str = r"$BF_{\mathrm{10}} = " + f"{BF10:.3f}" + r", $"
+#     Returns
+#     -------
+#     str : formatted annotation string with two lines.
+#     """
+#     mapped = map_p_value(p_perm)  # uses your existing helper
+#     # BF line: "> 100" if big enough, else numeric
+#     if np.isfinite(BF10) and BF10 > big_bf:
+#         bf_str = r"$BF_{\mathrm{10}} > " + f"{int(big_bf)}" + r", $"
+#     else:
+#         bf_str = r"$BF_{\mathrm{10}} = " + f"{BF10:.3f}" + r", $"
 
-    txt = (
-        r" $\beta_{\mathrm{" + beta_label + r"}} = " + f"{beta:.3f}, $" +
-        r"$p_{\mathrm{perm}} " + f"{mapped}" + r"$" +
-        "\n" + bf_str + f" {BF_conclusion}"
-    )
-    return txt
+#     txt = (
+#         r" $\beta_{\mathrm{" + beta_label + r"}} = " + f"{beta:.3f}, $" +
+#         r"$p_{\mathrm{perm}} " + f"{mapped}" + r"$" +
+#         "\n" + bf_str + f" {BF_conclusion}"
+#     )
+#     return txt
 
 # def plot_age_distribution(trials_table,  save_fig=True, session_based=False):
 #     """_summary_

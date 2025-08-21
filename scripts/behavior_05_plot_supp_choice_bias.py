@@ -1,23 +1,30 @@
 #%%
 """
-behavior_05_plot_supp_choice_bias.py
+Figure: F1-supp — Choice-bias shifts vs age.
 
-Goal
+Inputs
+------
+- Per-session parameter shifts with age: C.RESULTSPATH / "{split_type}_fit_psy_paras_age_info_367sessions_2025.csv"
+  where split_type ∈ {"block","prevresp"} and columns include:
+  ['eid','mouse_age'(days), 'age_group'(opt), 'age_months'(opt), 'age_years'(opt)] + MEASURES
+- Cached permutation table (auto): C.RESULTSPATH / "{split_type}_shift_{C.AGE2USE}_{n_perm}permutation.csv"
+
+Output
+------
+- Figure: C.FIGPATH / "F1_supp_choice_bias_shifts.pdf"
+
+Panels
+------
+- Rows: split_type in ["block","prevresp"]
+- Cols: MEASURES = ["bias_shift","lapselow_shift","lapsehigh_shift"]
+
+Notes
 -----
-Plot age effects on choice-bias parameter shifts under two splits:
-  - split_type='block'       → block_* panels
-  - split_type='prevresp'    → prevresp_* panels
-
-Metrics (y):
-  - bias_shift
-  - lapselow_shift
-  - lapsehigh_shift
-
-Outputs
--------
-C.FIGPATH / "F1_supp_choice_bias_shifts.pdf"
-C.DATAPATH / "<split>_shift_<age2use>_<nperm>permutation.csv" (cache)
+- Permutation runner is unified: scripts.utils.stats_utils.run_permutation_test (called via helper).
+- Text annotation via scripts.utils.plot_utils.format_bf_annotation.
+- Age helpers: add_age_group/age_months/age_years if missing.
 """
+
 
 # =====================
 # Imports
@@ -35,14 +42,14 @@ from statsmodels.genmod.families import Gaussian
 from statsmodels.genmod.families import Gamma
 from statsmodels.genmod.families.links import Log
 
-from scripts.utils.plot_utils import figure_style
 from ibl_style.utils import get_coords, MM_TO_INCH, double_column_fig
 import figrid as fg
 
-from scripts.utils.plot_utils import map_p_value
-from scripts.utils.data_utils import shuffle_labels_perm, bf_gaussian_via_pearson, interpret_bayes_factor
+from scripts.utils.plot_utils import figure_style, map_p_value, format_bf_annotation
+from scripts.utils.data_utils import (shuffle_labels_perm, bf_gaussian_via_pearson, interpret_bayes_factor, add_age_group, add_age_months, add_age_years)
 import config as C
-
+# from scripts.utils.stats_utils import run_permutation_test as _run_perm_utils
+from scripts.utils.stats_utils import get_permut_results_table
 
 # =====================
 # Tunables (script-local)
@@ -58,25 +65,22 @@ SAVE_FIG = True
 # 1) Loading / preparing
 # =====================
 def load_fit_params(split_type):
-    """
-    Load per-session psychometric parameter shifts with age info.
-    Expected CSV columns at minimum:
-      ['eid', 'mouse_age', 'age_group'(opt), 'age_months'(opt), 'age_years'(opt)]
-      + MEASURES
+    """Load parameter-shift table for a split_type and ensure age columns/group exist.
+    Expects CSV under C.RESULTSPATH and the MEASURES columns. Returns a DataFrame ready for plotting/stats.
     """
     csv_file = C.RESULTSPATH / f"{split_type}_fit_psy_paras_age_info_367sessions_2025.csv"
     df = pd.read_csv(csv_file)
     # Add/repair age columns & age_group if missing
     if 'mouse_age' in df.columns:
         if 'age_months' not in df.columns:
-            df['age_months'] = df['mouse_age'] / 30.0
+            df = add_age_months(df)
         if 'age_years' not in df.columns:
-            df['age_years'] = df['mouse_age'] / 365.0
+            df = add_age_years(df)
         if 'age_group' not in df.columns:
-            df['age_group'] = (df['mouse_age'] > C.AGE_GROUP_THRESHOLD).map({True: 'old', False: 'young'})
+           df = add_age_group(df)
     else:
         # If mouse_age missing, ensure age2use + age_months present for plotting/stats
-        assert C.AGE2USE in df.columns, f"'{C.AGE2USE}' not found in {csv}"
+        assert C.AGE2USE in df.columns, f"'{C.AGE2USE}' not found in {csv_file}"
         if 'age_months' not in df.columns:
             if C.AGE2USE == 'age_years':
                 df['age_months'] = df['age_years'] * 12.0
@@ -84,7 +88,7 @@ def load_fit_params(split_type):
                 raise ValueError("Provide 'age_months' or 'mouse_age' in the input CSV.")
         if 'age_group' not in df.columns:
             if 'mouse_age' in df.columns:
-                df['age_group'] = (df['mouse_age'] > C.AGE_GROUP_THRESHOLD).map({True: 'old', False: 'young'})
+                df = add_age_group(df)
             else:
                 # fallback: split by median age2use if mouse_age truly absent
                 df['age_group'] = (df[C.AGE2USE] > df[C.AGE2USE].mean()).map({True: 'old', False: 'young'})
@@ -97,83 +101,11 @@ def load_fit_params(split_type):
 
 
 # =====================
-# 2 Permutation testing (cached)
-# =====================
-def _single_permutation(i, data, permuted_label, formula, family_func=Gamma(link=Log())):
-    try:
-        shuffled = data.copy()
-        shuffled[C.AGE2USE] = permuted_label
-        model = glm(formula=formula, data=shuffled, family=family_func).fit()
-        return model.params[C.AGE2USE]
-    except Exception:
-        return np.nan
-
-
-def run_permutation_test(data, age_labels, formula, family_func, shuffling, n_permut, n_jobs, random_state=C.RANDOM_STATE):
-    permuted_labels, _ = shuffle_labels_perm(
-        labels1=age_labels, labels2=None, shuffling=shuffling,
-        n_permut=n_permut, random_state=random_state, n_cores=min(4, n_jobs)
-    )
-    null_dist = Parallel(n_jobs=n_jobs)(
-        delayed(_single_permutation)(i, data, permuted_labels[i], formula, family_func)
-        for i in tqdm(range(n_permut), desc=f"Permuting {formula}")
-    )
-    null_dist = np.asarray(null_dist)
-    valid_null = null_dist[~np.isnan(null_dist)]
-
-    model = glm(formula=formula, data=data, family=family_func).fit()
-    observed = model.params[C.AGE2USE]
-    observed_p = model.pvalues[C.AGE2USE]
-    p_perm = (np.sum(np.abs(valid_null) >= np.abs(observed)) + 1) / (len(valid_null) + 1)
-    return observed, observed_p, p_perm, valid_null
-
-
-def get_or_compute_perm_results(split_type, df_in, measures_list=MEASURES,
-                                n_permut=C.N_PERMUT_BEHAVIOR):
-    """
-    Cache permutation results per split_type; one row per measure.
-    """
-    out_csv = C.RESULTSPATH / f"{split_type}_shift_{C.AGE2USE}_{n_permut}permutation.csv"
-    if out_csv.exists():
-        return pd.read_csv(out_csv)
-
-    rows = []
-    for measure in measures_list:
-        formula = f"{measure} ~ {C.AGE2USE}"
-        idx = ~np.isnan(df_in[measure])
-        df_fit = df_in.loc[idx].reset_index(drop=True)
-        age_vals = df_fit[C.AGE2USE].to_numpy()
-
-        observed, observed_p, p_perm, valid_null = run_permutation_test(
-            data=df_fit,
-            age_labels=age_vals,
-            formula=formula,
-            family_func=FAMILY_FUNC,
-            shuffling=SHUFFLING,
-            n_permut=n_permut,
-            n_jobs=N_JOBS,
-            random_state=C.RANDOM_STATE
-        )
-        print(f"[{split_type}] {measure}: β={observed:.4f}, p_perm={p_perm:.4f}")
-        rows.append({
-            'split_type': split_type,
-            'y_var': measure,
-            'n_perm': n_permut,
-            'formula': formula,
-            'observed_val': observed,
-            'observed_val_p': observed_p,
-            'p_perm': p_perm,
-            'ave_null_dist': float(np.nanmean(valid_null)),
-        })
-    res = pd.DataFrame(rows)
-    res.to_csv(out_csv, index=False)
-    return res
-
-
-# =====================
 # 3) Plotting
 # =====================
 def build_figure_layout():
+    """Create the 2×3 grid canvas (rows = split_type, cols = MEASURES) and return (fig, axs dict)."""
+
     figure_style()
     fig = double_column_fig()
     width, height = fig.get_size_inches() / MM_TO_INCH
@@ -192,15 +124,12 @@ def build_figure_layout():
     return fig, axs
 
 
-def _fmt_stats_text(beta, p_perm, BF10, BF_conclusion):
-    """Safe mathtext (avoid '$$')."""
-    mapped = map_p_value(p_perm)
-    line1 = rf"$\beta_{{\mathrm{{age}}}} = {beta:.3f},\ p_{{\mathrm{{perm}}}} {mapped}$"
-    line2 = (r"$BF_{10} > 100$" if BF10 > 100 else rf"$BF_{{10}} = {BF10:.3f}$")
-    return f"{line1}\n{line2} {BF_conclusion}"
-
-
 def plot_shift_panel(ax, df_plot, measure, perm_df):
+    """
+    Plot one measure vs age_months with BF/perm annotation; scatter + optional regression line.
+    Uses format_bf_annotation for the text and hue by age_group.
+    """
+
     # stats text
     beta = perm_df.loc[perm_df['y_var'] == measure, 'observed_val'].values[0]
     p_perm = perm_df.loc[perm_df['y_var'] == measure, 'p_perm'].values[0]
@@ -209,7 +138,7 @@ def plot_shift_panel(ax, df_plot, measure, perm_df):
     BF10 = BF['BF10']
     BF_concl = interpret_bayes_factor(BF10)
 
-    txt = _fmt_stats_text(beta=beta, p_perm=p_perm, BF10=BF10, BF_conclusion=BF_concl)
+    txt = format_bf_annotation(beta, p_perm, BF10, BF_concl, beta_label="age", big_bf=100)
     ax.text(0.05, 1.0, txt, transform=ax.transAxes, fontsize=4, linespacing=0.8, va='top')
 
     do_reg = (BF_concl in ('strong H1', 'moderate H1'))
@@ -228,20 +157,32 @@ def plot_shift_panel(ax, df_plot, measure, perm_df):
 # =====================
 # 4) Main
 # =====================
-def main(save_fig: bool = SAVE_FIG):
-    # for testing, use a smaller number of permutations
-    # n_permut_behavior = 100  # TODO: FOR TEST
+def main(save_fig=SAVE_FIG):
+    """Load data for both split types → compute/read permutation tables → draw 2×3 panels → save PDF if requested."""
+
     fig, axs = build_figure_layout()
 
     for split_type in ['block', 'prevresp']:
         df = load_fit_params(split_type)
 
-        # permutation results (cached per split_type)
-        perm_df = get_or_compute_perm_results(
-            split_type=split_type,
-            df_in=df,
-            measures_list=MEASURES,
-            n_permut=C.N_PERMUT_BEHAVIOR
+        # # permutation results (cached per split_type)
+        # perm_df = get_or_compute_perm_results(
+        #     split_type=split_type,
+        #     df_in=df,
+        #     measures_list=MEASURES,
+        #     n_permut=C.N_PERMUT_BEHAVIOR
+        # )
+        out_csv = C.RESULTSPATH / f"t_{split_type}_shift_{C.AGE2USE}_{C.N_PERMUT_BEHAVIOR}permutation.csv"
+        perm_df = get_permut_results_table(
+            df=df,
+            age_col=C.AGE2USE,
+            measures=MEASURES,
+            family_func=FAMILY_FUNC,
+            shuffling=SHUFFLING,
+            n_permut=C.N_PERMUT_BEHAVIOR,
+            n_jobs=N_JOBS,
+            random_state=C.RANDOM_STATE,
+            filename=out_csv
         )
 
         # draw the three measures for this split
@@ -263,3 +204,4 @@ def main(save_fig: bool = SAVE_FIG):
 
 if __name__ == "__main__":
     main(save_fig=True)
+

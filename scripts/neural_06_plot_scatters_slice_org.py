@@ -3,6 +3,8 @@ pooled; slice_org
 raw; mean-subtracted
 all 7 metrics
 
+#TODO: add stats results
+
 """
 #%%
 import pandas as pd
@@ -17,11 +19,7 @@ import ast
 
 import config as C
 from scripts.utils.plot_utils import create_slice_org_axes, map_p_value
-from scripts.utils.io import read_table, save_figure
-
-
-def get_suffix(mean_subtraction):
-    return 'meansub' if mean_subtraction else ''
+from scripts.utils.io import read_table, save_figure, get_suffix
 
 
 def get_vmin_vmax(metric):
@@ -136,6 +134,10 @@ def plot_scatter_pooled(df, permut_df, BF_df, y_col='pre_fr', estimator='mean',
     BF_conclusion = BF_df.loc[BF_df['metric'] == y_col, 'BF10_age_category'].values[0]
     BF10 = BF_df.loc[BF_df['metric'] == y_col, 'BF10_age'].values[0]
 
+    # sns.scatterplot(x='mouse_age_months', y=y_col, data=agg_df, hue='age_group',#size='num_datapoints',
+    #     marker='.', legend=False, s=agg_df['number_neurons'],
+    #     palette=palette, ax=ax)  # style_order=['M','F'],style='mouse_sex' #TODO: alpha=0.8
+
 
     if y_col in ['pre_fr','post_fr','pre_ff','post_ff']:
         # fig, ax = plt.subplots(1, 1, figsize=(3, 2.36))  
@@ -151,6 +153,7 @@ def plot_scatter_pooled(df, permut_df, BF_df, y_col='pre_fr', estimator='mean',
         vmin, vmax = get_vmin_vmax(f'log_{y_col}')
         ax.set_ylim(vmin, vmax)
 
+        # 4) 设置单轴（左轴）为 log 间距 + 原始单位标签
         if 'fr' in y_col:
             tick_vals = [2, 4, 8, 16, 32, 64]
         elif 'ff' in y_col:
@@ -197,6 +200,7 @@ def plot_scatter_pooled(df, permut_df, BF_df, y_col='pre_fr', estimator='mean',
         fname = f'Omnibus_{y_col}_{get_suffix(mean_subtraction)}_scatter.pdf'
         plt.savefig(os.path.join(C.FIGPATH, fname), dpi=500)
 
+    #plt.show()()
 
 
 def plot_scatter_by_region(df, permut_df, BF_df, y_col='pre_fr', estimator='mean',
@@ -243,10 +247,10 @@ def plot_scatter_by_region(df, permut_df, BF_df, y_col='pre_fr', estimator='mean
 
             sns.scatterplot(x='mouse_age_months', y=f'log_{y_col}', data=agg_df, hue='age_group',#size='num_datapoints',
                 marker='.', legend=False, s=agg_df['number_neurons'],
-                palette=C.PALETTE, ax=ax)  
+                palette=C.PALETTE, ax=ax)  # style_order=['M','F'],style='mouse_sex' #TODO: alpha=0.8
             if BF_conclusion == 'strong H1' or BF_conclusion == 'moderate H1':
                 #TODO:
-                chain_table = read_table(C.RESULTSPATH / f'omnibus_{y_col}_{region}_BF_chain_table.csv').set_index("Unnamed: 0")
+                chain_table = read_table(C.RESULTSPATH / f'regional_{y_col}_{region}_BF_chain_table.csv').set_index("Unnamed: 0")
                 # print(chain_table)
                 age_range, logFF_preds = custom_fit_line_region(sub_df, chain_table, mean_subtraction=mean_subtraction)
                 sns.lineplot(x=age_range*12, y=logFF_preds, color='gray', lw=0.8, ax=ax)
@@ -254,7 +258,7 @@ def plot_scatter_by_region(df, permut_df, BF_df, y_col='pre_fr', estimator='mean
         else:
             sns.scatterplot(x='mouse_age_months', y=y_col, data=agg_df, hue='age_group',#size='num_datapoints',
                 marker='.', legend=False, s=agg_df['number_neurons'],
-                palette=C.PALETTE, ax=ax) 
+                palette=C.PALETTE, ax=ax)  # style_order=['M','F'],style='mouse_sex' #TODO: alpha=0.8
             
             if BF_conclusion == 'strong H1' or BF_conclusion == 'moderate H1':
                 sns.regplot( x='mouse_age_months', y=y_col, data=agg_df,
@@ -287,10 +291,9 @@ def plot_scatter_by_region(df, permut_df, BF_df, y_col='pre_fr', estimator='mean
         filename = C.FIGPATH / f"supp_slice_org_{y_col}_{granularity}_{get_suffix(mean_subtraction)}_{estimator}_age_relationship_{C.ALIGN_EVENT}_2025.pdf"
         save_figure(fig, filename)
 
+    #plt.show()()
 
-
-if __name__ == "__main__":
-    mean_subtraction = True #TODO:
+def main(mean_subtraction = True):
 
     if mean_subtraction:
         metrics_path = C.DATAPATH / "neural_metrics_summary_meansub.parquet"
@@ -306,10 +309,10 @@ if __name__ == "__main__":
 
     for metric, est in selected_metrics:
         # if metric in ['fr_delta_modulation','ff_quench', 'ff_quench_modulation']:
-        df_permut_path_pooled = C.RESULTSPATH / f"Omnibus_{metric}_{C.N_PERMUT_NEURAL_OMNIBUS}permutation_{C.ALIGN_EVENT}_{C.TRIAL_TYPE}_{'meansub' if mean_subtraction else ''}_2025.csv"
-        df_permut_path_region = C.RESULTSPATH / f"Regional_{metric}_{C.N_PERMUT_NEURAL_REGIONAL}permutation_{C.ALIGN_EVENT}_{C.TRIAL_TYPE}_{'meansub' if mean_subtraction else ''}_2025.csv"
-        df_BF_path_pooled = C.RESULTSPATH / f"Omnibus_{'meansub' if mean_subtraction else ''}BFs_{C.ALIGN_EVENT}_{C.TRIAL_TYPE}_2025_06Aug.csv"
-        df_BF_path_region = C.RESULTSPATH / f"regional_{'meansub' if mean_subtraction else ''}BFs_{C.ALIGN_EVENT}_{metric}_{C.TRIAL_TYPE}_2025_06Aug.csv"
+        df_permut_path_pooled = C.RESULTSPATH / f"Omnibus_{metric}_{C.N_PERMUT_NEURAL_OMNIBUS}permutation_{C.ALIGN_EVENT}_{C.TRIAL_TYPE}_{'meansub' if mean_subtraction else ''}.csv"
+        df_permut_path_region = C.RESULTSPATH / f"Regional_{metric}_{C.N_PERMUT_NEURAL_REGIONAL}permutation_{C.ALIGN_EVENT}_{C.TRIAL_TYPE}_{'meansub' if mean_subtraction else ''}.csv"
+        df_BF_path_pooled = C.RESULTSPATH / f"omnibus_{'meansub' if mean_subtraction else ''}BFs_{C.ALIGN_EVENT}_{C.TRIAL_TYPE}.csv"
+        df_BF_path_region = C.RESULTSPATH / f"regional_{'meansub' if mean_subtraction else ''}BFs_{C.ALIGN_EVENT}_{metric}_{C.TRIAL_TYPE}.csv"
 
         # else:
         #     df_permut_path_pooled = C.DATAPATH / f"Omnibus_{metric}_{n_perm}permutation_{C.ALIGN_EVENT}_{C.TRIAL_TYPE}_{'meansub' if mean_subtraction else ''}_2025.csv"
@@ -325,9 +328,7 @@ if __name__ == "__main__":
         df_permut_region = read_table(df_permut_path_region)
         
         df_BF_pooled = read_table(df_BF_path_pooled)
-        df_BF_pooled['BF10_age'] = df_BF_pooled['BF10_age'].apply(lambda x: ast.literal_eval(x)[0]).astype(float)
         df_BF_region = read_table(df_BF_path_region)
-        df_BF_region['BF10_age'] = df_BF_region['BF10_age'].apply(lambda x: ast.literal_eval(x)[0]).astype(float)
         
         print(f"Plotting {metric}...")
 
@@ -336,4 +337,8 @@ if __name__ == "__main__":
         plot_scatter_by_region(neural_metrics, df_permut_region, df_BF_region, y_col=metric, estimator=est,
                             granularity='probe_level', save=True, mean_subtraction=mean_subtraction)
 
-# %%
+
+if __name__ == "__main__":
+    main(mean_subtraction=True)
+
+
