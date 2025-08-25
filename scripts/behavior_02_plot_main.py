@@ -46,7 +46,7 @@ from scripts.utils.behavior_utils import (
     fit_psychometric_paras,
     compute_choice_history
 )
-from scripts.utils.data_utils import add_age_group, add_age_months, add_age_years
+from scripts.utils.data_utils import add_age_group
 from scripts.utils.behavior_utils import filter_trials
 from scripts.utils.io import read_table, save_figure
 # === Plotting Tools ===
@@ -150,7 +150,7 @@ def plot_age_distribution(trials_table, save_fig=True, session_based=False):
     session_based : bool
         If True, count sessions (mean age per eid); else count mice (mean age per mouse).
     """
-    df = add_age_months(trials_table)
+    df = add_age_group(trials_table)
 
     if session_based:
         age_info = (df.groupby(["age_group", "eid"], as_index=False)["age_months"]

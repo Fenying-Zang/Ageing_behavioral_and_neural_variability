@@ -9,12 +9,12 @@ Fenying Zang, Leiden University, 2025, f.zang@fsw.leidenuniv.nl
 
 ## Installation & Setup
 
-This project builds on the IBL unified environment. For **full reproducibility**, we recommend installing the [IBL environment](https://github.com/int-brain-lab/iblenv).
+This project builds on the [IBL unified environment](https://github.com/int-brain-lab/iblenv).  
+For **reproducibility**, all users should first install the IBL environment and then add the extra dependencies required by this project.
 
-If you only want to **reproduce figures** using the provided intermediate data, you can install dependencies directly from `requirements.txt`. #TODO: 
+### 1. Install IBL environment via conda
 
-### 1. Install IBL environment via conda (recommended)
-
+See [IBL unified environment](https://github.com/int-brain-lab/iblenv) for full instruction.
 ```bash
 conda update -n base -c defaults conda
 conda create --name iblenv python=3.10 --yes
@@ -55,6 +55,14 @@ git clone https://github.com/Fenying-Zang/ageing_behavioral_and_neural_variabili
 cd ageing_behavioral_and_neural_variability
 ```
 
+### 4. Install additional dependencies for this project
+After activating iblenv and cloning this repository, install the extra dependencies:
+
+```bash
+pip install -r requirements.txt
+
+```
+
 ## Project Structure
 
 ```
@@ -63,6 +71,8 @@ ageing_behavioral_and_neural_variability/
 ├── LICENSE            # MIT license
 ├── config.py          # Global variables
 ├── run_figs.py        # Run this script to generate all figures
+├── run_all.py         # Run this script to  regenerate intermediate data from scratch all figures
+├── requirements.txt   # Extra Python deps on top of iblenv
 ├── data/              # Intermediate or derived data (tracked via Git LFS)
 ├── scripts/           # Python scripts for analysis and plotting
 │   └── utils/         # Shared helper functions
@@ -72,9 +82,20 @@ ageing_behavioral_and_neural_variability/
 
 ## Reproducing Figures
 
-- Clean up the `figures_test/` folder (optional).
-- Run `run_figs.py` script and figures will be saved in the `figures_test/` folder. This will generate all manuscript figures using intermediate `.parquet` and `.csv` files from the `data/` and `results/` folder.
-- If you want to regenerate intermediate data from scratch, see the individual scripts in `scripts/`. #TODO:
+```bash
+# (Optional) Clear previously generated plots
+rm -rf figures_test/*
+
+# Reproduce all manuscript figures from intermediate `.parquet` and `.csv` files
+# (located in `data/` and `results/`)
+# ⏱ Expected runtime: few minutes
+python run_figs.py
+
+# To recompute all intermediate data from raw sources and regenerate figures
+# (rebuilds `results/` and re-saves figures into `figures_test/`)
+# ⏱ Expected runtime: several hours (depending on machine and data access)
+python run_all.py
+```
 
 ## Data
 

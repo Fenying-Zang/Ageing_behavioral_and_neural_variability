@@ -46,7 +46,7 @@ from ibl_style.utils import get_coords, MM_TO_INCH, double_column_fig
 import figrid as fg
 
 from scripts.utils.plot_utils import figure_style, map_p_value, format_bf_annotation
-from scripts.utils.data_utils import (shuffle_labels_perm, bf_gaussian_via_pearson, interpret_bayes_factor, add_age_group, add_age_months, add_age_years)
+from scripts.utils.data_utils import (shuffle_labels_perm, bf_gaussian_via_pearson, interpret_bayes_factor, add_age_group)
 import config as C
 # from scripts.utils.stats_utils import run_permutation_test as _run_perm_utils
 from scripts.utils.stats_utils import get_permut_results_table
@@ -72,10 +72,6 @@ def load_fit_params(split_type):
     df = pd.read_csv(csv_file)
     # Add/repair age columns & age_group if missing
     if 'mouse_age' in df.columns:
-        if 'age_months' not in df.columns:
-            df = add_age_months(df)
-        if 'age_years' not in df.columns:
-            df = add_age_years(df)
         if 'age_group' not in df.columns:
            df = add_age_group(df)
     else:

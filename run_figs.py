@@ -5,7 +5,7 @@ import subprocess
 import config as C
 
 STEPS = [
-    "scripts.behavior_02_plot_main",#√
+    # "scripts.behavior_02_plot_main",#√
     "scripts.behavior_03b_plot_supp_training",#√
     "scripts.behavior_04_plot_supp_trial_counts",#√
     "scripts.behavior_05_plot_supp_choice_bias", ##√permu again, need to save files?

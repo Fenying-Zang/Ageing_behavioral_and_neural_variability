@@ -33,7 +33,7 @@ from statsmodels.genmod.families import Gamma
 from statsmodels.genmod.families.links import Log
 from scripts.utils.permutation_test import plot_permut_test
 from scripts.utils.data_utils import (shuffle_labels_perm, bf_gaussian_via_pearson, interpret_bayes_factor,
-                                      add_age_group, add_age_months, add_age_years)
+                                      add_age_group)
 from scripts.utils.plot_utils import format_bf_annotation
 from scripts.utils.io import read_table
 from scripts.utils.stats_utils import single_permutation, run_permutation_test
@@ -57,8 +57,6 @@ def prepare_training_table(df):
     """Add 'age_months' (=mouse_age/30), 'age_years' (=mouse_age/365), and 'age_group'; return a copy."""
 
     df = df.copy()
-    df = add_age_months(df)
-    df = add_age_years(df)
     df = add_age_group(df)
     return df
 
@@ -159,7 +157,7 @@ def fmt_age_annotation(beta, p_perm, data_for_bf, y_col):
 
     if "age_months" not in data_for_bf.columns:
         data_for_bf = data_for_bf.copy()
-        data_for_bf = add_age_months(data_for_bf)
+        data_for_bf = add_age_group(data_for_bf)
 
     BF = bf_gaussian_via_pearson(data_for_bf, y_col, "age_months")
     BF10 = BF["BF10"]
@@ -285,7 +283,7 @@ def plot_performance_at_criterion(training_table, *, criterion, n_day_from_crite
 
 
     df = training_table.copy()
-    df = add_age_months(df)
+    df = add_age_group(df)
 
     if criterion == "first_recording":
         data_before = df[df["num_days_from_recording"] == n_day_from_criterion]
@@ -314,7 +312,7 @@ def plot_performance_from_start(training_table, *, n_day_from_start, ax, stat_re
     """Scatter of 'perf_easy' on a fixed day from start (e.g., 20/50); annotate with β/p_perm/BF; returns ax."""
 
     df = training_table.copy()
-    df = add_age_months(df)
+    df = add_age_group(df)
     data2plot = df[df["num_days_from_start"] == n_day_from_start]
     beta, p_adj, p_perm, sig = extract_stats(stat_results, "n_day_from_start", n_day_from_start)
     txt = fmt_age_annotation(beta, p_perm, data2plot, "perf_easy")
