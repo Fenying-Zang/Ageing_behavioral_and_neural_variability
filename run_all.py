@@ -12,7 +12,6 @@ from scratch with a single command.
 """
 import sys, subprocess, config as C
 
-
 # Ordered pipeline steps (modules run sequentially).
 # Each step is a standalone script runnable via `python -m`.
 STEPS = [
