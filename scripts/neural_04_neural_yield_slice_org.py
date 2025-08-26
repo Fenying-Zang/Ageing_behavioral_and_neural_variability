@@ -1,4 +1,5 @@
 """
+Figure 2 S1. Neural yield slightly decrease with age.
 permutation on neural yield
 
 """
@@ -6,21 +7,22 @@ permutation on neural yield
 import pandas as pd
 import os
 import numpy as np
-import matplotlib.pyplot as plt
 import seaborn as sns
 from scripts.utils.plot_utils import figure_style
 from ibl_style.utils import MM_TO_INCH
 import config as C
-from scripts.utils.plot_utils import create_slice_org_axes, map_p_value, format_bf_annotation
+from scripts.utils.plot_utils import create_slice_org_axes, format_bf_annotation
 import figrid as fg
-from scripts.utils.data_utils import shuffle_labels_perm, bf_gaussian_via_pearson, interpret_bayes_factor, add_age_group
-from joblib import Parallel, delayed
+from scripts.utils.data_utils import bf_gaussian_via_pearson, interpret_bayes_factor, add_age_group
 from statsmodels.genmod.families import Gaussian
-from statsmodels.formula.api import glm
-from tqdm import tqdm
-from scripts.utils.plot_utils import plot_permut_test
 from scripts.utils.io import read_table
 from scripts.utils.stats_utils import run_permutation_test
+from scripts.utils.io import read_table, save_figure
+import logging
+
+
+log = logging.getLogger(__name__)
+
 
 def load_neural_yield_table():
     """Load yield parquet, derive neural_yield, add age fields/group."""
@@ -51,7 +53,7 @@ def get_permut_results (y_var, age2use, neural_yield_table):
             observed_val, observed_val_p, p_perm, valid_null = run_permutation_test (
                 data=region_data,
                 age_labels=this_age,
-                formula=formula2use,           # 这里无需包含 C(cluster_region)
+                formula=formula2use,         
                 family_func=family_func,
                 shuffling='labels1_global',
                 n_permut=C.N_PERMUT_NEURAL_REGIONAL,
@@ -130,10 +132,6 @@ def plot_yield_by_region(df, permut_df, bf_df, y_var='n_cluster', save_fig=True)
         BF10 = result_bf_df['BF10'].values[0]
         BF_conclusion = result_bf_df['BF_conclusion'].values[0]
 
-        # if BF10 > 100:
-        #     txt = fr" $\beta_{{\mathrm{{age}}}} = {beta:.3f}, $"+ f"$p_{{\\mathrm{{perm}}}} {p_perm_mapped}$" +  f"\n$BF_{{\\mathrm{{10}}}} > 100, $" + f" {BF_conclusion}"
-        # else:
-        #     txt = fr" $\beta_{{\mathrm{{age}}}} = {beta:.3f}, $"+ f"$p_{{\\mathrm{{perm}}}} {p_perm_mapped}$" +  f"\n$BF_{{\\mathrm{{10}}}} = {BF10:.3f}, $" + f" {BF_conclusion}"
         txt = format_bf_annotation(beta, p_perm, BF10, BF_conclusion, beta_label="age", big_bf=100)
 
         ax.text(0.05, 1.2, txt, transform=ax.transAxes, fontsize=4, verticalalignment='top', linespacing=0.8)
@@ -155,15 +153,12 @@ def plot_yield_by_region(df, permut_df, bf_df, y_var='n_cluster', save_fig=True)
     fig.supxlabel("Age (months)", fontsize=8).set_y(0.35)
 
     if save_fig:
-        fname = f"F2S1_slice_org_{y_var}_{C.ALIGN_EVENT}_permutation_2025.pdf"
-        fig.savefig(C.FIGPATH / fname)
-        print(f"Saved figure to {C.FIGPATH}/{fname}")
+        fname = C.FIGPATH / f"F2S1_slice_org_{y_var}_{C.ALIGN_EVENT}_permutation_2025.pdf"
+        save_figure(fig, fname, add_timestamp=True)
+        
 
-    #plt.show()()
-
-
-if __name__ == "__main__":
-    print("Loading data...")
+def main():
+    log.info("Loading data...")
     neural_yield_table = load_neural_yield_table()
 
     for y_var in ['n_cluster', 'neural_yield']:
@@ -172,5 +167,8 @@ if __name__ == "__main__":
         plot_yield_by_region(neural_yield_table, permut_df, bf_df, y_var)
 
 
+if __name__ == "__main__":
+    from scripts.utils.io import setup_logging
+    setup_logging()
 
-# %%
+    main()

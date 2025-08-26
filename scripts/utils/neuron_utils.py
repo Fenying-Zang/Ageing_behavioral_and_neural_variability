@@ -1,10 +1,50 @@
+"""
+Neural data utility functions.
+
+Functions
+---------
+- bin_spikes2D        : Bin spike trains into trial x neuron x time matrices.
+- cal_presence_ratio  : Compute accurate presence ratio and firing rate for clusters.
+- smoothing_sliding   : Sliding-window smoothing of binned spikes.
+- enrich_df_new       : Build neuron x conditions- and neuron-level DataFrame with metadata.
+- combine_regions     : Map beryl atlas regions into broader groups.
+"""
 
 import numpy as np
 import pandas as pd
-from iblutil.numerical import  bincount2D
+from iblutil.numerical import bincount2D
+
 
 def bin_spikes2D(spike_times, spike_clusters, cluster_ids, align_times, pre_time, post_time, bin_size, weights=None):
+    """
+    Bin spike trains into a 3D array aligned to trial events.
 
+    Parameters
+    ----------
+    spike_times : np.ndarray
+        All spike timestamps (s).
+    spike_clusters : np.ndarray
+        Cluster IDs for each spike in spike_times.
+    cluster_ids : np.ndarray
+        Unique cluster IDs to include (order defines 2nd dimension).
+    align_times : np.ndarray
+        Trial-aligned event times to center bins around.
+    pre_time : float
+        Time before event (s).
+    post_time : float
+        Time after event (s).
+    bin_size : float
+        Bin width (s).
+    weights : np.ndarray or None
+        Optional weights for each spike (e.g. amplitude).
+
+    Returns
+    -------
+    bins : ndarray, shape (n_trials, n_clusters, n_bins)
+        Binned spike counts (or weighted sum).
+    tscale : ndarray
+        Bin centers relative to event time (s).
+    """
     n_bins_pre = int(np.ceil(pre_time / bin_size))
     n_bins_post = int(np.ceil(post_time / bin_size))
     n_bins = n_bins_pre + n_bins_post
@@ -29,7 +69,7 @@ def bin_spikes2D(spike_times, spike_clusters, cluster_ids, align_times, pre_time
     return bins, tscale
 
 
-def cal_presence_ratio(start_point, end_point, spike_times,spike_clusters, cluster_ids, hist_win=10):
+def cal_presence_ratio(start_point, end_point, spike_times, spike_clusters, cluster_ids, hist_win=10):
     """
     Computes the presence ratio of spike counts: the number of bins where there is at least one
     spike, over the total number of bins, given a specified bin width.
@@ -54,21 +94,46 @@ def cal_presence_ratio(start_point, end_point, spike_times,spike_clusters, clust
         >>> ts = units_b['times']['1']
         >>> pr, pr_bins = bb.metrics.pres_ratio(ts)
     """
-
-    # bins = np.arange(start_point, end_point, hist_win)
-    # spks_bins, _ = np.histogram(ts, bins)
-    # pr = len(np.where(spks_bins)[0]) / len(spks_bins)
-
     presence_ratio_bin = bincount2D(spike_times, spike_clusters,
                                 xbin=hist_win,
                                 ybin=cluster_ids, xlim=[start_point, end_point])[0]
     pr_poi = np.sum(presence_ratio_bin > 0, axis=1) / presence_ratio_bin.shape[1]
     spike_count = np.sum(presence_ratio_bin, axis=1)
-    fr_poi = spike_count / (end_point -start_point)
+    fr_poi = spike_count / (end_point - start_point)
     return pr_poi, fr_poi
+
 
 def smoothing_sliding(spike_times, spike_clusters, cluster_ids, align_times, align_epoch=(-0.2, 0.5), bin_size=0.1, n_win=5,
                       causal=1):
+    """
+    Smooth spike trains with a sliding window.
+
+    Parameters
+    ----------
+    spike_times : np.ndarray
+        All spike timestamps (s).
+    spike_clusters : np.ndarray
+        Cluster IDs for each spike.
+    cluster_ids : np.ndarray
+        Unique cluster IDs to include.
+    align_times : np.ndarray
+        Event times to align to.
+    align_epoch : tuple, optional
+        Time window relative to event.
+    bin_size : float, optional
+        Bin width (s).
+    n_win : int, optional
+        Number of sub-bins within each bin for smoothing.
+    causal : bool, optional
+        If True, enforce causal alignment.
+
+    Returns
+    -------
+    all_bins : ndarray
+        Smoothed spike count array (n_trials x n_clusters x n_bins).
+    all_times : ndarray
+        Time vector for bins.
+    """
     t_shift = bin_size / n_win
     epoch = [align_epoch[0], align_epoch[1]]
     if causal:
@@ -95,12 +160,59 @@ def smoothing_sliding(spike_times, spike_clusters, cluster_ids, align_times, ali
     return all_bins, all_times
 
 
-
 def enrich_df_new(conditionsplit=False, k=None, id=None, ff=None, fr=None, time_ff=None, bins_mean=None, bins_std=None, fr_normalized=None,
               pid=None, eid=None,  age_at_recording=None, sex=None, subject=None, sess_date=None, signed_contrast=None,
               n_trials=None, trial_type=None, 
-              clusters=None, cluster_idx=None): #lab=None,, pids_un_young=None 
+              clusters=None, cluster_idx=None): 
+    """
+    Build a DataFrame of neuron-level metrics and metadata.
 
+    Parameters
+    ----------
+    conditionsplit : bool
+        Whether to include condition-specific info (e.g. contrast).
+    k : int
+        Neuron index.
+    id : int
+        Cluster ID.
+    ff : np.ndarray
+        Fano factor array [n_neurons x n_timepoints].
+    fr : np.ndarray
+        Firing rate array [n_neurons x n_timepoints].
+    time_ff : np.ndarray
+        Timepoints for metrics.
+    bins_mean : np.ndarray
+        Mean Fano factor across bins.
+    bins_std : np.ndarray
+        Variance of Fano factor across bins.
+    fr_normalized : np.ndarray
+        Normalized firing rates.
+    pid, eid : str
+        Probe and session identifiers.
+    age_at_recording : float
+        Mouse age at session (days).
+    sex : str
+        Mouse sex.
+    subject : str
+        Mouse nickname.
+    sess_date : str
+        Session date.
+    signed_contrast : float, optional
+        Trial contrast (if conditionsplit).
+    n_trials : int
+        Number of trials for this neuron.
+    trial_type : str
+        Trial type label.
+    clusters : pd.DataFrame
+        Cluster metadata table.
+    cluster_idx : slice or list
+        Index into clusters for alignment.
+
+    Returns
+    -------
+    df_curr : pd.DataFrame
+        DataFrame with neuron metrics and metadata.
+    """
     #for each neuron/cluster:
     curr = {}
     curr['FFs'] = ff[k,:]
@@ -178,11 +290,17 @@ def enrich_df_new(conditionsplit=False, k=None, id=None, ff=None, fr=None, time_
 
 def combine_regions(regions):
     """
-    Combine brain regions into broader groups.
-    Parameters:
-        regions: list, numpy.ndarray, or pandas.Series of region acronyms.
-    Returns:
-        array of mapped region names.
+    Map fine-grained brain region acronyms into broader groups.
+
+    Parameters
+    ----------
+    regions : array-like
+        Region acronyms (list, ndarray, or Series).
+
+    Returns
+    -------
+    np.ndarray
+        Mapped region names (e.g. VISa/VISam → PPC).
     """
     mapping = {
         'VISa': 'PPC', 'VISam': 'PPC',
@@ -195,5 +313,5 @@ def combine_regions(regions):
         'TTd': 'OLF', 'DP': 'OLF', 'AON': 'OLF',
         'LSr': 'LS', 'LSc': 'LS', 'LSv': 'LS',
     }
-    regions = pd.Series(regions)  # 强制转为 Series
+    regions = pd.Series(regions) 
     return regions.replace(mapping).to_numpy()

@@ -1,3 +1,11 @@
+"""
+Statistical helper functions.
+
+Includes:
+    - GLM permutation test (single run and batched)
+    - Bayes factor calculation (via Pearson correlation equivalence)
+    - Cached results management (read/write)
+"""
 import numpy as np
 from joblib import Parallel, delayed
 from tqdm import tqdm
@@ -6,8 +14,29 @@ from pathlib import Path
 import pandas as pd
 import config as C
 
+
 def single_permutation(i, data, permuted_label, *, formula, family_func):
-    """Fit GLM once with permuted 'age_years'; return the coefficient for 'age_years' (np.nan on failure)."""
+    """
+    Run a single GLM fit with permuted 'age_years' labels.
+
+    Parameters
+    ----------
+    i : int
+        Permutation index (for logging/debugging only).
+    data : pd.DataFrame
+        Input data containing predictors and dependent variable.
+    permuted_label : array-like
+        Shuffled version of 'age_years'.
+    formula : str
+        GLM formula, e.g. "y ~ age_years".
+    family_func : statsmodels.genmod.families.Family
+        GLM family (e.g. Gaussian(), Gamma()).
+
+    Returns
+    -------
+    float
+        The coefficient for 'age_years' (np.nan if fitting fails).
+    """
     try:
         shuffled = data.copy()
         shuffled["age_years"] = permuted_label
@@ -17,59 +46,46 @@ def single_permutation(i, data, permuted_label, *, formula, family_func):
         return np.nan
 
 
-# def run_permutation_test(data, age_labels, *, formula,
-#                          family_func, shuffling, n_permut, n_jobs,
-#                          random_state, plot=False):
-#     """Permutation test for 'age_years' in a GLM; returns (observed_beta, glm_p, perm_p, valid_null)."""
-#     df = data.copy()
-
-#     # lazy import to avoid circular deps
-#     try:
-#         from scripts.utils.data_utils import shuffle_labels_perm
-#     except Exception:
-#         shuffle_labels_perm = None
-
-#     if shuffle_labels_perm is None:
-#         raise RuntimeError("shuffle_labels_perm not available: please ensure scripts.utils.data_utils provides it.")
-
-#     permuted_labels, _ = shuffle_labels_perm(
-#         labels1=age_labels, labels2=None, shuffling=shuffling,
-#         n_permut=n_permut, random_state=random_state, n_cores=n_jobs,
-#     )
-
-#     null_dist = Parallel(n_jobs=n_jobs)(
-#         delayed(single_permutation)(
-#             i, df, permuted_labels[i], formula=formula, family_func=family_func
-#         )
-#         for i in tqdm(range(n_permut))
-#     )
-#     null_dist = np.asarray(null_dist, dtype=float)
-#     valid_null = null_dist[np.isfinite(null_dist)]
-
-#     model_obs = glm(formula=formula, data=df, family=family_func).fit()
-#     observed_val = model_obs.params["age_years"] if "age_years" in model_obs.params.index else np.nan
-#     observed_val_p = model_obs.pvalues["age_years"] if "age_years" in model_obs.pvalues.index else np.nan
-
-#     if valid_null.size == 0 or not np.isfinite(observed_val):
-#         p_perm = np.nan
-#     else:
-#         p_perm = (np.sum(np.abs(valid_null) >= np.abs(observed_val)) + 1.0) / (valid_null.size + 1.0)
-
-#     # Optional plotting via lazy import; silently skip if unavailable
-#     if plot and valid_null.size > 0 and np.isfinite(observed_val):
-#         try:
-#             from scripts.utils.plot_utils import plot_permut_test
-#             plot_permut_test(null_dist=valid_null, observed_val=observed_val, p=p_perm, mark_p=None)
-#         except Exception:
-#             pass
-
-#     return observed_val, observed_val_p, p_perm, valid_null
-
-# scripts/utils/stats_utils.py 里
 def run_permutation_test(data, age_labels, *, formula,
                          family_func, shuffling, n_permut, n_jobs,
                          random_state, plot=False, group_labels=None):
-    """Permutation test for 'age_years' in a GLM; returns (observed_beta, glm_p, perm_p, valid_null)."""
+    """
+    Run a permutation test for the effect of 'age_years' in a GLM.
+
+    Parameters
+    ----------
+    data : pd.DataFrame
+        Data containing dependent variable and predictors.
+    age_labels : array-like
+        Values of the age predictor.
+    formula : str
+        GLM formula, e.g. "y ~ age_years".
+    family_func : statsmodels.genmod.families.Family
+        GLM family (e.g. Gaussian(), Gamma()).
+    shuffling : str
+        Shuffling mode: 'labels1_based_on_2' or 'labels1_global'.
+    n_permut : int
+        Number of permutations.
+    n_jobs : int
+        Number of parallel jobs.
+    random_state : int
+        Random seed for reproducibility.
+    plot : bool, optional
+        If True, plot permutation distribution (default False).
+    group_labels : array-like, optional
+        Grouping labels for 'labels1_based_on_2' shuffling.
+
+    Returns
+    -------
+    observed_val : float
+        Observed coefficient for 'age_years'.
+    observed_val_p : float
+        p-value from the GLM (Wald test).
+    p_perm : float
+        Permutation-based p-value.
+    valid_null : np.ndarray
+        Distribution of permuted coefficients.
+    """
     df = data.copy()
     try:
         from scripts.utils.data_utils import shuffle_labels_perm
@@ -78,7 +94,6 @@ def run_permutation_test(data, age_labels, *, formula,
     if shuffle_labels_perm is None:
         raise RuntimeError("shuffle_labels_perm not available.")
 
-    # 关键改动：把 group_labels 传进去（为 'labels1_based_on_2' 提供 labels2）
     permuted_labels, _ = shuffle_labels_perm(
         labels1=age_labels, labels2=group_labels, shuffling=shuffling,
         n_permut=n_permut, random_state=random_state, n_cores=n_jobs,
@@ -104,7 +119,7 @@ def run_permutation_test(data, age_labels, *, formula,
 
     if plot and valid_null.size > 0 and np.isfinite(observed_val):
         try:
-            from scripts.utils.permutation_test import plot_permut_test
+            from scripts.develop.permutation_test import plot_permut_test
             plot_permut_test(null_dist=valid_null, observed_val=observed_val, p=p_perm, mark_p=None)
         except Exception:
             pass
@@ -113,7 +128,27 @@ def run_permutation_test(data, age_labels, *, formula,
 
 
 def get_bf_results(content, df, age2use, filename=None):
-    """Read BF cache if exists; otherwise compute via Pearson-based BF and save. Returns (BF10, BF_conclusion)."""
+    """
+    Read cached Bayes Factor results if available; otherwise compute via Pearson-based BF.
+
+    Parameters
+    ----------
+    content : str
+        Name of the analysis context (used for cache filename).
+    df : pd.DataFrame
+        Data containing the measure and predictor.
+    age2use : str
+        Name of the age column to use.
+    filename : Path or None
+        Optional override for cache file path.
+
+    Returns
+    -------
+    BF10 : float
+        Bayes factor (evidence for H1 over H0).
+    BF_conclusion : str
+        Textual interpretation of BF strength.
+    """
     import pandas as pd
     import config as C
     from scripts.utils.data_utils import bf_gaussian_via_pearson, interpret_bayes_factor
@@ -140,7 +175,27 @@ def get_bf_results(content, df, age2use, filename=None):
 
 
 def get_permut_results(content, age2use, df, filename=None):
-    """Read permutation cache if exists; otherwise run unified permutation test and save. Returns (p_perm, observed_val)."""
+    """
+    Read cached permutation test results if available; otherwise compute.
+
+    Parameters
+    ----------
+    content : str
+        Analysis context (used for cache filename).
+    age2use : str
+        Predictor column name for age.
+    df : pd.DataFrame
+        Input data containing dependent variable and predictor.
+    filename : Path or None
+        Optional override for cache file path.
+
+    Returns
+    -------
+    p_perm : float
+        Permutation-based p-value.
+    observed_val : float
+        Observed coefficient for age.
+    """
     import pandas as pd
     import config as C
     from statsmodels.genmod.families import Gaussian
@@ -192,20 +247,34 @@ def get_permut_results_table(df, age_col, measures,
                              family_func, shuffling, n_permut, n_jobs,
                              random_state, filename=None):
     """
-    Read-if-exists else compute-and-save permutation stats for multiple measures.
+    Batch version of permutation test across multiple dependent variables.
 
-    Returns a DataFrame with rows:
-    ['y_var','n_perm','formula','observed_val','observed_val_p','p_perm','ave_null_dist']
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Input data.
+    age_col : str
+        Column name for age predictor.
+    measures : list of str
+        Dependent variables (metrics) to test.
+    family_func : statsmodels.genmod.families.Family
+        GLM family.
+    shuffling : str
+        Shuffling mode.
+    n_permut : int
+        Number of permutations.
+    n_jobs : int
+        Number of parallel jobs.
+    random_state : int
+        Random seed.
+    filename : Path or None
+        Optional cache file path.
+
+    Returns
+    -------
+    pd.DataFrame
+        One row per measure with permutation test statistics.
     """
-
-    # reuse the unified runner already in this module
-    # from scripts.utils.stats_utils import run_permutation_test  # not needed if same file
-
-    # default cache path mirrors your current naming
-    # if filename is None:
-    #     filename = C.RESULTSPATH / f"{age_col}_{n_permut}permutation.csv"
-    # filename = Path(filename)
-
     if filename.exists():
         return pd.read_csv(filename)
 

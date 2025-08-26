@@ -1,8 +1,16 @@
 """
+Figure 3a
+Figure 3 S1a. Regional specificity of firing rate time courses.
+Figure 4a
+Figure 4 S2a. Regional specificity of mean-subtracted Fano Factors
+
+
 frs time courses  
 FF time courses
 """
 #%%
+
+import config as C
 import pandas as pd
 import numpy as np
 import os
@@ -14,7 +22,11 @@ from scripts.utils.plot_utils import figure_style
 import config as C
 from scripts.utils.plot_utils import create_slice_org_axes, add_window_label
 from scripts.utils.io import read_table, get_suffix
+from scripts.utils.io import read_table, save_figure, setup_logging
+import logging
 
+
+log = logging.getLogger(__name__)
 
 def plot_time_courses_pooled(df, y_col='frs', estimator='mean',
                                 granularity='neuron_level',errorbar = ('ci', 95),
@@ -43,28 +55,24 @@ def plot_time_courses_pooled(df, y_col='frs', estimator='mean',
             font="Arial", fontsize=6, c=C.PALETTE['young'])
 
     ax.axvline(x=0,  lw=0.5, alpha=0.8, c='gray')
-    # ax.axvspan(-0.1, 0, facecolor='gray', alpha=0.1)
-    # ax.axvspan(0.16, 0.26, facecolor='gray', alpha=0.1)
-
+    ax.axvspan(-0.1, 0, facecolor='gray', alpha=0.1)
+    ax.axvspan(0.16, 0.26, facecolor='gray', alpha=0.1)
     add_window_label(ax, -0.1, 0.0,  'pre',  location='outside')
     add_window_label(ax, 0.16, 0.26, 'post', location='outside')
 
     ax.set_xlim(-0.2, 0.8)
     ax.set_xlabel("Time from stimulus onset (s)", font="Arial", fontsize=8)
     ax.set_ylabel(f'{estimator} {y_col} ', font="Arial", fontsize=8)
-    # ax.set_title(f"{granularity}, {y_col}; {errorbar}", font="Arial", fontsize=8)
 
     sns.despine(offset=2, trim=False, ax=ax)
     plt.tight_layout()
 
     if save:
-        fname = f"Omnibus_group_{granularity}_{get_suffix(mean_subtraction)}_{y_col}_{estimator}_timecourse_{C.ALIGN_EVENT}.pdf"
-        fig.savefig(os.path.join(C.FIGPATH, fname), dpi=300)
-
-    #plt.show()()
+        fname = C.FIGPATH / f"Omnibus_group_{granularity}_{get_suffix(mean_subtraction)}_{y_col}_{estimator}_timecourse_{C.ALIGN_EVENT}.pdf"
+        save_figure(fig, fname, add_timestamp=True)
 
 
-def plot_time_courses_by_region(df, y_col='frs', estimator='mean',errorbar = ('ci', 95),
+def plot_time_courses_by_region(df, y_col='frs', estimator='mean', errorbar = ('ci', 95),
                                 granularity='neuron_level', save=True, mean_subtraction=False):
     """Plot firing rate or FF timecourses organized by brain region."""
     fig, axs = create_slice_org_axes(fg, MM_TO_INCH)
@@ -100,8 +108,8 @@ def plot_time_courses_by_region(df, y_col='frs', estimator='mean',errorbar = ('c
 
         # Visual aids
         ax.axvline(x=0, lw=0.5, alpha=0.8, c='gray')
-        # ax.axvspan(-0.1, 0, facecolor='gray', alpha=0.1)
-        # ax.axvspan(0.16, 0.26, facecolor='gray', alpha=0.1)
+        ax.axvspan(-0.1, 0, facecolor='gray', alpha=0.1)
+        ax.axvspan(0.16, 0.26, facecolor='gray', alpha=0.1)
         if region == 'MOs':
             add_window_label(ax, -0.1, 0.0,  'pre',  location='outside', lw=0.7, fontsize=6)
             add_window_label(ax, 0.16, 0.26, 'post', location='outside', lw=0.7, fontsize=6)
@@ -121,16 +129,14 @@ def plot_time_courses_by_region(df, y_col='frs', estimator='mean',errorbar = ('c
         ax.set_xlabel("")
         ax.set_ylabel("")
 
-    # Final figure settings
-    # fig.suptitle(f'{granularity} {estimator} {y_col} time course', fontsize=8)
     if C.ALIGN_EVENT == 'stim':
         fig.supxlabel('Time from stimulus onset (s)', fontsize=8).set_y(0.35)
     else:
         fig.supxlabel('Time from movement onset (s)', fontsize=8).set_y(0.35)
 
     if save:
-        fig.savefig(os.path.join(C.FIGPATH, f"Slice_org_{get_suffix(mean_subtraction)}_{granularity}_{y_col}_{estimator}_timecourse_{C.ALIGN_EVENT}.pdf"), dpi=300)
-    #plt.show()()
+        fname = C.FIGPATH / f"Slice_org_{get_suffix(mean_subtraction)}_{granularity}_{y_col}_{estimator}_timecourse_{C.ALIGN_EVENT}.pdf"
+        save_figure(fig, fname, add_timestamp=True)
 
 
 def main(mean_subtraction=True):
@@ -169,7 +175,9 @@ def main(mean_subtraction=True):
 
 
 if __name__ == "__main__":
+    from scripts.utils.io import setup_logging
+    setup_logging()
 
-    main(mean_subtraction=False)
+    main(mean_subtraction=True)
 
 # %%

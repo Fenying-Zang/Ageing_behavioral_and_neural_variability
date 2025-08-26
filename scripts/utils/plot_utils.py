@@ -1,17 +1,37 @@
-import os
+"""
+Plotting utilities.
+
+Includes
+--------
+- figure_style / set_seaborn : Standardized plot styles (IBL-like, print-friendly).
+- create_slice_org_axes      : Slice-organized brain region layout for multi-panel plots.
+- plot_psychometric          : Fit + plot psychometric function across contrasts.
+- plot_chronometric          : Plot chronometric (RT) function across contrasts.
+- break_xaxis                : Draw discontinuous axis markers.
+- add_n                      : Annotate plots with subject/trial counts.
+- num_star / num_star_001     : Map p-values to star annotations.
+- map_p_value                : Convert p-values to formatted string.
+- plot_permut_test           : Visualize permutation test distributions.
+- format_bf_annotation       : Build annotation text with β, p_perm, and Bayes factor.
+- add_window_label           : Draw labeled horizontal bars for analysis windows.
+"""
 import seaborn as sns
 import matplotlib
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-import scipy as sp
 from ibl_style.utils import get_coords, MM_TO_INCH, double_column_fig
-import figrid as fg
 import matplotlib.pyplot as plt
 from pathlib import Path
+import matplotlib.transforms as mtransforms
 
 
 def figure_style():
+    """
+    Apply IBL-style plotting defaults for small scientific figures.
+    - Uses Arial font, thin axes, small ticks.
+    - Intended for multi-panel journal figures.
+    """
     sns.set_theme(style="ticks", context="paper",
             rc={"font.size": 7,
                 "axes.titlesize": 8,
@@ -44,51 +64,57 @@ def figure_style():
     matplotlib.rcParams['font.family'] = 'Arial'
 
 
-def set_seaborn():
-    """
-    Set seaborn style for plotting figures (print-friendly)
-    """
-    sns.set_theme(
-        style="ticks", context="paper",
-        font="Arial",
-        rc={
-            "font.size": 9,
-            "axes.titlesize": 9,
-            "axes.labelsize": 9,
-            "lines.linewidth": 1,
-            "xtick.labelsize": 7,
-            "ytick.labelsize": 7,
-            "savefig.transparent": False,
-            "xtick.major.size": 2.5,
-            "ytick.major.size": 2.5,
-            "xtick.minor.size": 2,
-            "ytick.minor.size": 2,
-            "axes.labelcolor": "black",
-            "text.color": "black",
-            "xtick.color": "black",
-            "ytick.color": "black",
-            "axes.edgecolor": "black",
-        }
-    )
-    matplotlib.rcParams['pdf.fonttype'] = 42
-    matplotlib.rcParams['ps.fonttype'] = 42
-    matplotlib.rcParams['font.family'] = 'Arial'
+# def set_seaborn():
+#     """
+#     Apply seaborn-based plotting style for print-friendly figures.
+#     Larger fonts than figure_style(), for slides/posters.
+#     """
+#     sns.set_theme(
+#         style="ticks", context="paper",
+#         font="Arial",
+#         rc={
+#             "font.size": 9,
+#             "axes.titlesize": 9,
+#             "axes.labelsize": 9,
+#             "lines.linewidth": 1,
+#             "xtick.labelsize": 7,
+#             "ytick.labelsize": 7,
+#             "savefig.transparent": False,
+#             "xtick.major.size": 2.5,
+#             "ytick.major.size": 2.5,
+#             "xtick.minor.size": 2,
+#             "ytick.minor.size": 2,
+#             "axes.labelcolor": "black",
+#             "text.color": "black",
+#             "xtick.color": "black",
+#             "ytick.color": "black",
+#             "axes.edgecolor": "black",
+#         }
+#     )
+#     matplotlib.rcParams['pdf.fonttype'] = 42
+#     matplotlib.rcParams['ps.fonttype'] = 42
+#     matplotlib.rcParams['font.family'] = 'Arial'
 
 
 def create_slice_org_axes(fg, MM_TO_INCH, fig=None):
+   """
+    Create a slice-organized layout of brain regions (IBL atlas standard).
+
+    Parameters
+    ----------
+    fg : module
+        Figure grid utility (e.g. figrid).
+    MM_TO_INCH : float
+        Conversion factor from mm to inches.
+    fig : matplotlib.Figure or None
+        If None, create a new double-column figure.
+
+    Returns
+    -------
+    fig : matplotlib.Figure
+    axs : dict
+        Mapping of region name → Axes object.
     """
-    创建标准脑区布局图像和 axes。
-
-    Parameters:
-    - fg: 提供 place_axes_on_grid 的工具（如 figgrid）
-    - MM_TO_INCH: 毫米转英寸的常量
-    - fig: 可选传入现有 fig，否则自动调用 double_column_fig()
-
-    Returns:
-    - fig: matplotlib Figure
-    - axs: dict 映射 brain region -> Axes
-    """
-
     if fig is None:
         fig = double_column_fig()
 
@@ -112,7 +138,25 @@ def create_slice_org_axes(fg, MM_TO_INCH, fig=None):
     return fig, axs
 
 def plot_psychometric(x, y, subj, **kwargs):
+    """
+    Fit and plot psychometric curve for grouped data.
 
+    Parameters
+    ----------
+    x : array-like
+        Signed contrasts (%).
+    y : array-like
+        Choices (0/1).
+    subj : array-like
+        Subject/session IDs for grouping.
+    kwargs : dict
+        Passed to seaborn.lineplot.
+
+    Notes
+    -----
+    - Fits erf_psycho_2gammas via psychofit.
+    - Handles "broken" x-axis when 0% contrast present.
+    """
     # import brainbox.behavior.pyschofit as psy
     import psychofit as psy
 
@@ -197,7 +241,22 @@ def plot_psychometric(x, y, subj, **kwargs):
 
 
 def plot_chronometric(x, y, subj, estimator='median', **kwargs):
+    """
+    Plot chronometric curve (RT vs contrast) with error bars.
 
+    Parameters
+    ----------
+    x : array-like
+        Signed contrasts.
+    y : array-like
+        Reaction times (s).
+    subj : array-like
+        Subject/session IDs.
+    estimator : str or function
+        Aggregation method (e.g., 'median').
+    kwargs : dict
+        Passed to seaborn.lineplot.
+    """
     df = pd.DataFrame(
         {'signed_contrast': x, 'rt': y, 'subject_nickname': subj})
     df.dropna(inplace=True)  # ignore NaN RTs
@@ -247,7 +306,10 @@ def plot_chronometric(x, y, subj, estimator='median', **kwargs):
 
 
 def break_xaxis(y=0, **kwargs):
-
+    """
+    Draw visual markers for discontinuous x-axis (hacky overlay).
+    Places small // markers near ±30.
+    """
     # axisgate: show axis discontinuities with a quick hack
     # https://twitter.com/StevenDakin/status/1313744930246811653?s=19
     # first, white square for discontinuous axis
@@ -265,24 +327,34 @@ def break_xaxis(y=0, **kwargs):
              verticalalignment='center', fontsize=6, fontweight='bold')
 
 
-def add_n(x, y, sj, **kwargs):
+# def add_n(x, y, sj, **kwargs):
+#     """
+#     Add annotation with number of subjects and trials.
 
-    df = pd.DataFrame({'signed_contrast': x, 'choice': y,
-                       'choice2': y, 'subject_nickname': sj})
+#     Parameters
+#     ----------
+#     x, y : array-like
+#         Data arrays.
+#     sj : array-like
+#         Subject IDs.
+#     """
+#     df = pd.DataFrame({'signed_contrast': x, 'choice': y,
+#                        'choice2': y, 'subject_nickname': sj})
 
-    # ADD TEXT ABOUT NUMBER OF ANIMALS AND TRIALS
-    plt.text(
-        15,
-        0.2,
-        '%d mice, %d trials' %
-        (df.subject_nickname.nunique(),
-         df.choice.count()),
-        fontweight='normal',
-        fontsize=6,
-        color='k')
+#     # ADD TEXT ABOUT NUMBER OF ANIMALS AND TRIALS
+#     plt.text(
+#         15,
+#         0.2,
+#         '%d mice, %d trials' %
+#         (df.subject_nickname.nunique(),
+#          df.choice.count()),
+#         fontweight='normal',
+#         fontsize=6,
+#         color='k')
 
 
 def num_star(pvalue):
+    """Return significance stars (with p-value threshold in text)."""
     if pvalue < 0.0001:
         stars = 'p < 0.0001 ****'
     elif pvalue < 0.001:
@@ -295,21 +367,9 @@ def num_star(pvalue):
         stars = 'n.s.'
     return stars
 
-def num_star_001(pvalue):
-    if pvalue < 0.0001:
-        stars = '****'
-    elif pvalue < 0.001:
-        stars = '***'
-    elif pvalue < 0.01:
-        stars = '**'
-    elif pvalue < 0.05:
-        stars = '*'
-    else:
-        stars = 'n.s.'
-    return stars
-
 
 def map_p_value(pvalue):
+    """Convert numeric p-value to formatted string (e.g., ' < 0.01')."""
     if pvalue < 0.0001:
         map_p = ' < 0.0001'
     elif pvalue < 0.001:
@@ -323,19 +383,26 @@ def map_p_value(pvalue):
 
 def plot_permut_test(null_dist, observed_val, p, mark_p=None, metric=None, save_path=None, show=True, region=None):
     """
-    Plot permutation test result.
-    
-    Parameters:
-        null_dist: array-like, the null distribution
-        observed_val: float, the observed test statistic
-        p: float, the permutation-based p-value
-        mark_p: float or None, if not None, draw significance threshold (e.g., 0.95)
-        title: str or None, optional title for the plot
-        save_path: str or Path or None, if set, the figure will be saved there
-        show: bool, whether to display the plot via #plt.show()()
-    
-    Returns:
-        fig, ax: Matplotlib figure and axes objects
+    Plot histogram of null distribution with observed value.
+
+    Parameters
+    ----------
+    null_dist : array-like
+        Null distribution from permutations.
+    observed_val : float
+        Observed test statistic.
+    p : float
+        Permutation p-value.
+    mark_p : float or None
+        Optional threshold (e.g. 0.95).
+    metric : str
+        Name of the metric for labeling.
+    save_path : str or Path or None
+        If provided, save figure to this path.
+    show : bool
+        If True, display figure.
+    region : str or None
+        Optional region name for figure title.
     """
     fig, ax = plt.subplots(figsize=(12, 7))
     n, bins, patches = ax.hist(null_dist, bins=25, color='gray', edgecolor='white')
@@ -400,46 +467,61 @@ def format_bf_annotation(beta, p_perm, BF10, BF_conclusion, beta_label="age", bi
     -------
     str : formatted annotation string with two lines.
     """
-    mapped = map_p_value(p_perm)  # uses your existing helper
+    mapped = map_p_value(p_perm)  # uses  existing helper
     # BF line: "> 100" if big enough, else numeric
     if np.isfinite(BF10) and BF10 > big_bf:
         bf_str = r"$BF_{\mathrm{10}} > " + f"{int(big_bf)}" + r", $"
     else:
         bf_str = r"$BF_{\mathrm{10}} = " + f"{BF10:.3f}" + r", $"
 
-    txt = (
-        r" $\beta_{\mathrm{" + beta_label + r"}} = " + f"{beta:.3f}, $" +
-        r"$p_{\mathrm{perm}} " + f"{mapped}" + r"$" +
-        "\n" + bf_str + f" {BF_conclusion}"
-    )
+    if np.abs(beta) < 0.001:
+        txt = (
+            r" $\beta_{\mathrm{" + beta_label + r"}} < " + "0.001, $" +
+            r"$p_{\mathrm{perm}} " + f"{mapped}" + r"$" +
+            "\n" + bf_str + f" {BF_conclusion}"
+        )
+    else:
+        txt = (
+            r" $\beta_{\mathrm{" + beta_label + r"}} = " + f"{beta:.3f}, $" +
+            r"$p_{\mathrm{perm}} " + f"{mapped}" + r"$" +
+            "\n" + bf_str + f" {BF_conclusion}"
+        )  
+
     return txt
 
 
-import matplotlib.transforms as mtransforms
 
 def add_window_label(ax, x_start, x_end, label, *,
-                     location='outside',               # 'inside' or 'outside'
-                     line_pad=0.02,                    # 与顶边的间距（轴坐标单位）
-                     text_pad=0.015,                   # 文字相对横线再往上的间距（轴坐标单位）
+                     location='outside',               
+                     line_pad=0.02,                    
+                     text_pad=0.015,                   
                      lw=1, fontsize=7):
     """
-    在时间窗 [x_start, x_end] 上方画黑线并标注 label。
-    x 用数据坐标；y 用轴坐标（0-1），对版式最稳。
+    Draw a horizontal line above/below an interval and annotate it.
+
+    Parameters
+    ----------
+    ax : matplotlib.Axes
+    x_start, x_end : float
+        Interval in data coordinates.
+    label : str
+        Window label.
+    location : {'inside','outside'}
+        Place inside or above axis.
     """
-    # y 的基准：inside 用 1 - line_pad，outside 用 1 + line_pad
+    # y：inside:1 - line_pad，outside:1 + line_pad
     if location == 'inside':
         y_line = 1.0 - line_pad
     else:
         y_line = 1.0 + line_pad
 
-    # 混合坐标：x -> data, y -> axes
+    # x -> data, y -> axes
     trans = mtransforms.blended_transform_factory(ax.transData, ax.transAxes)
 
-    # 横线
     ax.plot([x_start, x_end], [y_line, y_line],
             transform=trans, color='k', lw=lw, clip_on=False)
 
-    # 文本（居中）
+    # txt
     label_fmt = rf'$\it{{{label}}}$'
     ax.text((x_start + x_end)/2, y_line + (text_pad if location=='outside' else -text_pad),
             label_fmt, transform=trans, ha='center',

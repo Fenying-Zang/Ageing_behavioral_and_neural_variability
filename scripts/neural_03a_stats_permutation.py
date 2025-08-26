@@ -5,27 +5,22 @@ neural yield; 7 metrics
 #%%#
 import pandas as pd
 import numpy as np
-from pathlib import Path
-from tqdm import tqdm
-from joblib import Parallel, delayed
-from statsmodels.formula.api import glm
-from statsmodels.genmod.families import Gamma, Gaussian
-from statsmodels.genmod.families.links import Log
-
+from statsmodels.genmod.families import Gaussian
 import config as C
-# from scripts.utils.permutation_test import shuffle_labels, plot_permut_test #check 
 from scripts.utils.plot_utils import plot_permut_test
-from joblib import parallel_backend
 from scripts.utils.io import read_table, get_suffix
-from scripts.utils.stats_utils import run_permutation_test  # 统一的
+from scripts.utils.stats_utils import run_permutation_test  
+from scripts.utils.io import read_table, 
+import logging
 
+
+log = logging.getLogger(__name__)
 FAMILY_FUNC = Gaussian()
 N_JOBS = 6
 SHUFFLING = 'labels1_based_on_2'  # same as your other scripts
 
 
-
-def def_glm_formula(metric, mean_subtraction=False,log_transform=False):
+def def_glm_formula(metric, mean_subtraction=False, log_transform=False):
     """Return GLM formula string for a metric, switching covariates by metric & mean_subtraction/log_transform."""
     if metric in [ 'fr_delta_modulation', 'ff_quench_modulation']:
         formula2use = f"{metric} ~ age_years + C(cluster_region) + n_trials" 
@@ -98,12 +93,12 @@ def main(mean_subtraction=False, plot_permt_result=True, log_transform=False):
 
         observed_val, observed_val_p, p_perm, valid_null = run_permutation_test(
             data=neural_metrics2use,
-            age_labels=this_age,                 # age 向量
-            group_labels=this_eid,               # 关键：用于 labels1_based_on_2
+            age_labels=this_age,                
+            group_labels=this_eid,               
             formula=formula_full,
             family_func=FAMILY_FUNC,
             shuffling=SHUFFLING,                 # 'labels1_based_on_2'
-            n_permut=C.N_PERMUT_NEURAL_OMNIBUS,  # 或 REGIONAL
+            n_permut=C.N_PERMUT_NEURAL_OMNIBUS, 
             n_jobs=N_JOBS,
             random_state=C.RANDOM_STATE,
             plot=False
@@ -135,24 +130,16 @@ def main(mean_subtraction=False, plot_permt_result=True, log_transform=False):
             print(f"Processing region: {region}")
             this_age = region_data['age_years'].values
             this_eid = region_data['session_eid'].values
-            # observed_val, observed_val_p, p_perm, valid_null = run_permutation_test(
-            #     data=region_data,
-            #     this_age=this_age,
-            #     this_eid=this_eid,
-            #     formula2use=formula2use,
-            #     family_func=FAMILY_FUNC,
-            #     n_permut=C.N_PERMUT_NEURAL_REGIONAL,
-            #     n_jobs=N_JOBS
-            # )
+
             formula_region = drop_term_from_formula(formula_full, "C(cluster_region)")
             observed_val, observed_val_p, p_perm, valid_null = run_permutation_test(
                 data=region_data,
-                age_labels=this_age,                 # age 向量
-                group_labels=this_eid,               # 关键：用于 labels1_based_on_2
+                age_labels=this_age,                
+                group_labels=this_eid,              
                 formula=formula_region,
                 family_func=FAMILY_FUNC,
                 shuffling=SHUFFLING,                 # 'labels1_based_on_2'
-                n_permut=C.N_PERMUT_NEURAL_REGIONAL,  # 或 REGIONAL
+                n_permut=C.N_PERMUT_NEURAL_REGIONAL,  
                 n_jobs=N_JOBS,
                 random_state=C.RANDOM_STATE,
                 plot=False
@@ -160,7 +147,6 @@ def main(mean_subtraction=False, plot_permt_result=True, log_transform=False):
 
 
             if plot_permt_result:
-                # plot_permut_test(null_dist=valid_null, observed_val=observed_val, p=p_perm, mark_p=None)
                 plot_permut_test(null_dist=valid_null, observed_val=observed_val, p=p_perm, mark_p=None, metric=metric, save_path=C.FIGPATH, show=True, region=region)
 
             region_results.append({
@@ -174,13 +160,13 @@ def main(mean_subtraction=False, plot_permt_result=True, log_transform=False):
                 'ave_null_dist': valid_null.mean()
             }) #  'null_dist': valid_nul
 
-        pd.DataFrame(region_results).to_csv(
-            C.RESULTSPATH / f'Regional_{metric}_{C.N_PERMUT_NEURAL_REGIONAL}permutation_{C.ALIGN_EVENT}_{C.TRIAL_TYPE}_{get_suffix(mean_subtraction)}.csv',
-            index=False
-        )
+        outfile = C.RESULTSPATH / f'Regional_{metric}_{C.N_PERMUT_NEURAL_REGIONAL}permutation_{C.ALIGN_EVENT}_{C.TRIAL_TYPE}_{get_suffix(mean_subtraction)}.csv'
+        pd.DataFrame(region_results).to_csv(outfile, index=False)
+        log.info(f"[Saved table] {outfile.resolve()}")
 
 
 if __name__ == "__main__":
-
+    from scripts.utils.io import setup_logging
+    setup_logging()
     main(mean_subtraction=True, plot_permt_result=False, log_transform=True)
 # %%

@@ -2,6 +2,8 @@
 Compute training history.
 TO examine the training process of both BWM and LearningLifespan mice
 
+#TODO: check if BWM training is publicly available
+
 Input:  ibl_included_eids_trials_table2025_full.csv
 Output: data/training_history_149subjs_2025_NEW_v2.parquet
 """

@@ -1,0 +1,13 @@
+# Extra dependencies required on top of iblenv
+
+# Compute Bayes Factors
+pingouin>=0.5.4
+
+# Plotting style (IBL style package)
+ibl-style
+
+# Python <-> R bridge (for running R from Python, e.g. computing Bayes Factors)
+rpy2>=3.5.0
+
+iblatlas==0.9.0   # otherwise we may encounter TypeError: plot_polygon() got an unexpected keyword argument 'show_cbar' issue
+

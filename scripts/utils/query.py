@@ -1,18 +1,25 @@
-import json
+"""
+Query helpers for BWM and LearningLifespan datasets.
+
+Functions
+---------
+- bwm_query      : Query brainwide map insertions passing core QC or load a frozen list.
+- lifespan_query : Query learninglifespan insertions passing core QC.
+
+Notes
+-----
+- Both functions return a DataFrame with one row per insertion:
+  ['pid', 'eid', 'probe_name', 'session_number', 'date', 'subject', 'lab', ...]
+- The QC filters are implemented via alyx django query strings.
+- `marked_pass` block includes insertions manually marked PASS by experimenters,
+  in addition to those passing automated extended QC thresholds.
+"""
+
 from dateutil import parser
 import numpy as np
 import pandas as pd
-from pathlib import Path
-import os
-
 from iblutil.numerical import ismember
-from brainbox.io.one import SpikeSortingLoader, SessionLoader
-from brainbox.behavior import training
-from iblatlas.regions import BrainRegions
 import config as C
-# from ibllib.qc.base import CRITERIA
-# from one.remote import aws
-# import brainwidemap
 
 
 def bwm_query(one=None, alignment_resolved=True, return_details=False, freeze='2023_12_bwm_release'):
@@ -47,13 +54,8 @@ def bwm_query(one=None, alignment_resolved=True, return_details=False, freeze='2
     if freeze is not None:
         if return_details is True:
             print('Cannot return details when using a data freeze. Returning only main dataframe.')
-
-        # fixtures_path = Path(brainwidemap.__file__).parent.joinpath('fixtures')
             
         freeze_file = C.DATAPATH / f'{freeze}.csv'
-        print(freeze_file)
-        # assert freeze_file.exists(), f'{freeze} does not seem to be a valid freeze.'
-
         print(f'Loading bwm_query results from {freeze}.csv')
         bwm_df = pd.read_csv(freeze_file, index_col=0)
         bwm_df['date'] = [parser.parse(i).date() for i in bwm_df['date']]
@@ -112,6 +114,7 @@ def bwm_query(one=None, alignment_resolved=True, return_details=False, freeze='2
     else:
         return bwm_df
 
+
 def lifespan_query(one=None, alignment_resolved=True, return_details=False):
     """
     Function to query for learninglifespan sessions that pass the most important quality controls. Returns a dataframe
@@ -141,7 +144,7 @@ def lifespan_query(one=None, alignment_resolved=True, return_details=False):
     assert one is not None, 'If freeze=None, you need to pass an instance of one.api.ONE'
     base_query = (
         'session__projects__name,churchland_learninglifespan,'
-        '~session__json__IS_MOCK,True,' #TODO: what does this mean?
+        '~session__json__IS_MOCK,True,' 
         'session__qc__lt,50,'
         'session__extended_qc__behavior,1,'
         '~json__qc,CRITICAL,'

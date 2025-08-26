@@ -1,15 +1,12 @@
 """
 plot swanson figs to show regional specificity
-
-#TODO:note, the only difference lies in the stats file (_MSed)
+Figure 3c,e,h
+Figure 4c,e,g,j 
 
 """
 # neural_06_swanson_plot.py
 #%%
-
 import pandas as pd
-import numpy as np
-import os
 import matplotlib.pyplot as plt
 from matplotlib.colors import LinearSegmentedColormap
 from iblatlas.plots import plot_swanson_vector
@@ -17,7 +14,10 @@ from iblatlas.atlas import BrainRegions
 from scripts.utils.plot_utils import figure_style
 from scripts.utils.io import read_table
 import config as C
+from scripts.utils.io import read_table, save_figure
+import logging
 
+log = logging.getLogger(__name__)
 br = BrainRegions()
 
 def region_table(beryl_names):
@@ -49,14 +49,8 @@ def load_stats_results(y_col, mean_subtraction=False, n_permut=C.N_PERMUT_NEURAL
         fname = f'Regional_{y_col}_{n_permut}permutation_{C.ALIGN_EVENT}_{C.TRIAL_TYPE}_{suffix}.csv'
     return read_table(C.RESULTSPATH / fname)
 
-# def get_vmin_vmax(metric):
-#     ranges = {
-#         'pre_fr': (-1, 1), 'post_fr': (-1, 1),
-#         'fr_delta_modulation': (-4, 4),
-#         'pre_ff': (-0.4, 0.4), 'post_ff': (-0.4, 0.4),
-#         'ff_quench': (-0.4, 0.4), 'ff_quench_modulation': (-0.6, 0.6)
-#     }
-#     return ranges.get(metric, (-1, 1))
+
+
 def get_vmin_vmax(metric):
     ranges = {
         'pre_fr': (-0.5, 0.5), 'post_fr': (-0.5, 0.5),
@@ -86,18 +80,16 @@ def plot_swanson(metric, ROI_df, stats_df, mean_subtraction=False):
     plot_swanson_vector(
         merged_df['beryl_name'], merged_df['observed_val'],
         cmap=cmap, vmin=vmin, vmax=vmax, br=br,
-        empty_color='silver', show_cbar=True, annotate=True,
+        empty_color='white', show_cbar=True, annotate=True,
         annotate_list=merged_df['swanson_name'], fontsize=2, ax=ax
     )
 
-    # sig_regions = merged_df.loc[merged_df['p_perm'] <= 0.01, 'ROI'].dropna().unique().tolist()
-    # print(f'Significant regions for {metric}: {sig_regions}')
-    # ax.text(0.1, -0.3, f'{sig_regions}', fontsize=5, transform=ax.transAxes)
     ax.set_title(metric, fontsize=8)
     ax.set_axis_off()
 
-    fname = f"Swanson_{'meansub_' if mean_subtraction else ''}{metric}.pdf"
-    fig.savefig(os.path.join(C.FIGPATH, fname), dpi=300)
+    fname = C.FIGPATH / f"Swanson_{'meansub_' if mean_subtraction else ''}{metric}.pdf"
+    save_figure(fig, fname, add_timestamp=True)
+
 
 def main(mean_subtraction=False):
     if mean_subtraction:
@@ -113,8 +105,8 @@ def main(mean_subtraction=False):
         plot_swanson(metric, ROI_df, stats_df, mean_subtraction=mean_subtraction)
         # print('range of values:', stats_df['observed_val'].min(), stats_df['observed_val'].max(), stats_df['observed_val'].mean())
 
-
 if __name__ == "__main__":
-    main(mean_subtraction=False)
+    from scripts.utils.io import setup_logging
+    setup_logging()
 
-
+    main(mean_subtraction=True)

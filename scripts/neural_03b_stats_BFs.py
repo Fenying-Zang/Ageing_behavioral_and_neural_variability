@@ -5,25 +5,19 @@ compute BFs with BayesFactor package, without any random effects structure
 import pandas as pd
 import numpy as np
 import os
-import math
 import platform
-
-import matplotlib.pyplot as plt
-import seaborn as sns
-from ibl_style.utils import MM_TO_INCH
-from scripts.utils.plot_utils import figure_style
 from scripts.utils.data_utils import interpret_bayes_factor, add_age_group
-from matplotlib.ticker import MultipleLocator
-import figrid as fg
 from scripts.utils.io import read_table, get_suffix
 
 import config as C
 from rpy2.robjects import Formula
 import rpy2.robjects as ro
 from rpy2.robjects.packages import importr
-from rpy2.robjects.conversion import localconverter     
+from rpy2.robjects.conversion import localconverter    
 from rpy2.robjects import default_converter, pandas2ri  
+import logging
 
+log = logging.getLogger(__name__)
 # ---------- R env ----------
 os.environ['R_HOME'] = r"C:/PROGRA~1/R/R-44~1.1"
 os.environ['R_USER'] = os.path.expanduser("~")
@@ -36,16 +30,16 @@ bayesfactor = importr('BayesFactor')
 # Disable JIT (avoids rpy2 issues on Windows)
 ro.r('compiler::enableJIT(0)')
 
-try:  # CHANGED
+try:  
     if platform.system() == "Windows":
         ro.r('Sys.setlocale("LC_CTYPE", "English_United States")')
     else:
         ro.r('Sys.setlocale("LC_ALL", "English_United_States.UTF-8")')
 except Exception:
-    pass  # 安静失败即可
+    pass  
+
 
 # ---------- helpers ----------
-
 def def_BF_formula(metric, mean_subtraction=False, log_transform=False):
     if metric in ['fr_delta_modulation', 'ff_quench_modulation']:
         formula_full_str = f'{metric} ~ age_years + cluster_region + n_trials'
@@ -81,8 +75,8 @@ def def_BF_formula(metric, mean_subtraction=False, log_transform=False):
                 formula_reduced_region_str = f'{metric} ~ age_years + abs_contrast + n_trials'
     return formula_full_str, formula_reduced_age_str, formula_reduced_region_str
 
+
 def def_BF_formula_region(metric, mean_subtraction=False, log_transform=False):
-    """区域内模型：不含 cluster_region，因此也不需要 reduced_region 模型。"""  # CHANGED
     if metric in ['fr_delta_modulation', 'ff_quench_modulation']:
         formula_full_str = f'{metric} ~ age_years + n_trials'
         formula_reduced_age_str = f'{metric} ~ n_trials'
@@ -108,28 +102,28 @@ def def_BF_formula_region(metric, mean_subtraction=False, log_transform=False):
             else:
                 formula_full_str = f'{metric} ~ age_years + abs_contrast + n_trials'
                 formula_reduced_age_str = f'{metric} ~ abs_contrast + n_trials'
-    return formula_full_str, formula_reduced_age_str  # CHANGED (只返回两个)
+    return formula_full_str, formula_reduced_age_str  
+
 
 def compute_bayes_factor(df, metric,
                          formula_full_str=None,
                          formula_reduced_age_str=None,
                          formula_reduced_region_str=None):
-    # pandas -> R（使用局部转换上下文，替代 pandas2ri.activate）
-    with localconverter(default_converter + pandas2ri.converter):  # CHANGED
+    # pandas -> R
+    with localconverter(default_converter + pandas2ri.converter): 
         r_df = ro.conversion.py2rpy(df)
     ro.globalenv['df_r'] = r_df
 
     ro.globalenv['formula_full'] = Formula(formula_full_str)
     ro.globalenv['formula_reduced_age'] = Formula(formula_reduced_age_str)
-    if formula_reduced_region_str is not None:  # CHANGED
+    if formula_reduced_region_str is not None:  
         ro.globalenv['formula_reduced_region'] = Formula(formula_reduced_region_str)
-
-    # 在 R 里拟合与抽样
+    
     ro.r('''
         library(BayesFactor)
         bf_full <- lmBF(formula_full, data = df_r)
         bf_no_age <- lmBF(formula_reduced_age, data = df_r)
-        # posterior 抽样只对 full 模型做一次
+        # posterior 
         chains <- posterior(bf_full, iterations = 10000)
         summary_stats <- as.data.frame(summary(chains)$statistics)
         summary_quants <- as.data.frame(summary(chains)$quantiles)
@@ -138,27 +132,28 @@ def compute_bayes_factor(df, metric,
         assign("summary_stats", summary_stats, envir = .GlobalEnv)
         assign("summary_quants", summary_quants, envir = .GlobalEnv)
     ''')
-    # 如果提供了 “去掉 region” 的对照式，再额外计算（只用于 Omnibus）
-    if formula_reduced_region_str is not None:  # CHANGED
+    # 
+    if formula_reduced_region_str is not None: 
         ro.r('''
             bf_no_region <- lmBF(formula_reduced_region, data = df_r)
             bf_region <- bf_full / bf_no_region
             assign("bf_region", bf_region, envir = .GlobalEnv)
         ''')
 
-    # 取出 summary 表
-    with localconverter(default_converter + pandas2ri.converter):  # CHANGED
+    # 
+    with localconverter(default_converter + pandas2ri.converter):
         stats_df = ro.conversion.rpy2py(ro.r['summary_stats'])
         quants_df = ro.conversion.rpy2py(ro.r['summary_quants'])
     summary_df = pd.concat([stats_df, quants_df], axis=1)
 
-    # 取出 BF 数字
+    
     BF10_age = float(ro.r('extractBF(bf_age)$bf[1]')[0])
     BF10_region = np.nan
-    if formula_reduced_region_str is not None:  # CHANGED
+    if formula_reduced_region_str is not None:  
         BF10_region = float(ro.r('extractBF(bf_region)$bf[1]')[0])
 
     return BF10_age, BF10_region, summary_df
+
 
 def safe_lookup(df, row, col, default=np.nan):
     try:
@@ -166,13 +161,12 @@ def safe_lookup(df, row, col, default=np.nan):
     except Exception:
         return default
 
+
 def clean_dependent_variable(df, y_col):
     return df[np.isfinite(df[y_col]) & ~df[y_col].isna()].copy()
 
-# ---------- main ----------
-if __name__ == "__main__":
-    mean_subtraction = False
-    log_transform = True
+
+def main(mean_subtraction=False, log_transform=True):
 
     if mean_subtraction:
         metrics_path = C.DATAPATH / "neural_metrics_summary_meansub.parquet"
@@ -192,7 +186,7 @@ if __name__ == "__main__":
 
     result_list = []
 
-    for metric, est in selected_metrics:
+    for metric, _ in selected_metrics:
         neural_metrics2use = clean_dependent_variable(neural_metrics, metric)
 
         formula_full_str, formula_reduced_age_str, formula_reduced_region_str = def_BF_formula(
@@ -236,12 +230,12 @@ if __name__ == "__main__":
         result_region_list = []
         for region in C.ROIS:
             print(f"Processing region: {region}")
-            formula_full_r, formula_reduced_age_r = def_BF_formula_region(  # CHANGED
+            formula_full_r, formula_reduced_age_r = def_BF_formula_region(  
                 metric, mean_subtraction=mean_subtraction, log_transform=log_transform
             )
             region_df = neural_metrics2use[neural_metrics2use['cluster_region'] == region]
             if len(region_df) > 0:
-                BF10_age_region, _, chain_table_region = compute_bayes_factor(  # CHANGED: 不再传 reduced_region
+                BF10_age_region, _, chain_table_region = compute_bayes_factor( 
                     region_df, metric=metric,
                     formula_full_str=formula_full_r,
                     formula_reduced_age_str=formula_reduced_age_r,
@@ -257,7 +251,7 @@ if __name__ == "__main__":
                     'formula_full': [formula_full_r],
                     'BF10_age': [BF10_age_region],
                     'BF10_age_category': [BF10_age_category_region],
-                    'BF10_region': [np.nan],  # CHANGED: 区域模型不计算 region
+                    'BF10_region': [np.nan],  
                     'mean_contrast': [safe_lookup(chain_table_region, 'abs_contrast-abs_contrast', 'Mean')],
                     'low_ci_contrast': [safe_lookup(chain_table_region, 'abs_contrast-abs_contrast', '2.5%')],
                     'high_ci_contrast': [safe_lookup(chain_table_region, 'abs_contrast-abs_contrast', '97.5%')],
@@ -278,9 +272,15 @@ if __name__ == "__main__":
 
     final_df = pd.concat(result_list, ignore_index=True)
     final_df['age_ci_conclusion'] = ~((final_df['low_ci_age'] < 0) & (final_df['high_ci_age'] > 0))
-    if mean_subtraction:
-        final_df.to_csv(C.RESULTSPATH / f'omnibus_{get_suffix(mean_subtraction)}BFs_{C.ALIGN_EVENT}_{C.TRIAL_TYPE}.csv')
-    else:
+    if not mean_subtraction:
         final_df['contrast_ci_conclusion'] = ~((final_df['low_ci_contrast'] < 0) & (final_df['high_ci_contrast'] > 0))
-        final_df.to_csv(C.RESULTSPATH / f'omnibus_{get_suffix(mean_subtraction)}BFs_{C.ALIGN_EVENT}_{C.TRIAL_TYPE}.csv')
-# %%
+    filename = C.RESULTSPATH / f'omnibus_{get_suffix(mean_subtraction)}BFs_{C.ALIGN_EVENT}_{C.TRIAL_TYPE}.csv'
+    final_df.to_csv(filename, index=False)
+    log.info(f"[Saved table] {filename.resolve()}")
+
+
+if __name__ == "__main__":
+    from scripts.utils.io import setup_logging
+    setup_logging()
+
+    main(mean_subtraction = False, log_transform = True)

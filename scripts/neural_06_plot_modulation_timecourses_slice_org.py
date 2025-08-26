@@ -1,4 +1,11 @@
-
+"""
+Figure 3f
+Figure 3 S3. Regional specificity in contrast modulation of firing rate.
+Figure 3 S4a. Regional specificity of age-related differences in contrast modulation of firing rates
+Figure 4h
+Figure 4 S4. Regional specificity in contrast modulation of the Fano Factor
+Figure 4 S5a Regional specificity in age-related differences in contrast modulation of the Fano Factor
+"""
 #%%
 import config as C
 # import warnings
@@ -11,12 +18,17 @@ import figrid as fg
 import seaborn as sns
 
 from ibl_style.utils import MM_TO_INCH
+from scripts.utils.data_utils import add_age_group
 from scripts.utils.plot_utils import figure_style
 from scripts.utils.plot_utils import create_slice_org_axes, add_window_label
 from scripts.utils.io import read_table
+from scripts.utils.io import read_table, save_figure
+import logging
+
+log = logging.getLogger(__name__)
 
 
-def baseline_correct(df, y_col,estimator):
+def baseline_correct(df, y_col, estimator):
     """Subtract the value at time=0 from all timepoints for each unit/contrast group."""
     if estimator =='mean':
         baseline = df[df['timepoints'].abs() < C.tolerance].groupby(['uuids', 'abs_contrast'])[y_col].mean().rename('baseline')
@@ -26,6 +38,7 @@ def baseline_correct(df, y_col,estimator):
     df = df.join(baseline, on=['uuids', 'abs_contrast'])
     df[y_col] = df[y_col] - df['baseline']
     return df.drop(columns='baseline')
+
 
 def plot_modulation_time_courses_pooled(df, y_col='frs', estimator='median', granularity='neuron_level', split_by_age=False, save=True):
     """
@@ -43,8 +56,6 @@ def plot_modulation_time_courses_pooled(df, y_col='frs', estimator='median', gra
     fig, ax = plt.subplots(figsize=(3, 2))
 
     if split_by_age:
-        #baseline correction:
-        # sub_df = baseline_correct(sub_df, y_col, estimator)
 
         for group_name, group_df in df.groupby('age_group'):
             if group_df.empty:
@@ -58,30 +69,28 @@ def plot_modulation_time_courses_pooled(df, y_col='frs', estimator='median', gra
     else:
 
         sns.lineplot(
-            data=df, x='timepoints', y=y_col,lw=0.5,
+            data=df, x='timepoints', y=y_col, lw=0.5,
             estimator=estimator, hue='abs_contrast',
-            palette=C.PALETTE5, legend=False, ax=ax, errorbar = ('ci', 95)
+            palette=C.PALETTE5, legend=False, ax=ax, errorbar=('ci', 95)
         )
 
     ax.axvline(x=0, lw=0.5, alpha=0.8, c='gray')
-    # ax.axvspan(-0.1, 0, facecolor='gray', alpha=0.1)
-    # ax.axvspan(0.16, 0.26, facecolor='gray', alpha=0.1)
+    ax.axvspan(-0.1, 0, facecolor='gray', alpha=0.1)
+    ax.axvspan(0.16, 0.26, facecolor='gray', alpha=0.1)
     add_window_label(ax, -0.1, 0.0,  'pre',  location='outside')
     add_window_label(ax, 0.16, 0.26, 'post', location='outside')
     ax.set_xlim(-0.2, 0.8)
     ax.set_xlabel("Time from stimulus onset (s)", font="Arial", fontsize=8)
     ax.set_ylabel(f'{estimator} {y_col} (baseline corrected)', font="Arial", fontsize=8)
-    # ax.set_title(f"{granularity}, {y_col}", font="Arial", fontsize=8)
 
     sns.despine(offset=2, trim=False, ax=ax)
     plt.tight_layout()
 
     if save:
         suffix = '2groups_' if split_by_age else ''
-        fname = f"Omnibus_group_modulation_{granularity}_{suffix}{y_col}_{estimator}_timecourse_{C.ALIGN_EVENT}_noerrorbar.pdf"
-        fig.savefig(os.path.join(C.FIGPATH, fname), dpi=300)
+        fname = C.FIGPATH / f"Omnibus_group_modulation_{granularity}_{suffix}{y_col}_{estimator}_timecourse_{C.ALIGN_EVENT}_noerrorbar.pdf"
+        save_figure(fig, fname, add_timestamp=True)
 
-    #plt.show()()
 
 def plot_modulation_time_courses_pooled_2groups(df, y_col='frs', estimator='mean', granularity='neuron_level', save=True):
     """
@@ -105,8 +114,8 @@ def plot_modulation_time_courses_pooled_2groups(df, y_col='frs', estimator='mean
     )
 
     ax.axvline(x=0, lw=0.5, alpha=0.8, c='gray')
-    # ax.axvspan(-0.1, 0, facecolor='gray', alpha=0.1)
-    # ax.axvspan(0.16, 0.26, facecolor='gray', alpha=0.1)
+    ax.axvspan(-0.1, 0, facecolor='gray', alpha=0.1)
+    ax.axvspan(0.16, 0.26, facecolor='gray', alpha=0.1)
     
     ax.set_xlim(-0.2, 0.8)
     ax.set_xlabel("Time from stimulus onset (s)", font="Arial", fontsize=8)
@@ -117,10 +126,9 @@ def plot_modulation_time_courses_pooled_2groups(df, y_col='frs', estimator='mean
     plt.tight_layout()
 
     if save:
-        fname = f"Omnibus_group_modulation_{granularity}_{y_col}_{estimator}_timecourse_{C.ALIGN_EVENT}.pdf"
-        fig.savefig(os.path.join(C.FIGPATH, fname), dpi=300)
+        fname = C.FIGPATH / f"Omnibus_group_modulation_{granularity}_{y_col}_{estimator}_timecourse_{C.ALIGN_EVENT}.pdf"
+        save_figure(fig, fname, add_timestamp=True)
 
-    #plt.show()()
 
 def plot_modulation_time_courses_by_region(df, y_col='frs', estimator='median', granularity='neuron_level', split_by_age=False, save=True):
     """
@@ -160,8 +168,8 @@ def plot_modulation_time_courses_by_region(df, y_col='frs', estimator='median', 
             )
 
         ax.axvline(x=0, ls='--', lw=0.5, alpha=0.8, c='gray')
-        # ax.axvspan(-0.1, 0, facecolor='gray', alpha=0.1)
-        # ax.axvspan(0.16, 0.26, facecolor='gray', alpha=0.1)
+        ax.axvspan(-0.1, 0, facecolor='gray', alpha=0.1)
+        ax.axvspan(0.16, 0.26, facecolor='gray', alpha=0.1)
         if region == 'MOs':
             add_window_label(ax, -0.1, 0.0,  'pre',  location='outside', lw=0.7, fontsize=6)
             add_window_label(ax, 0.16, 0.26, 'post', location='outside', lw=0.7, fontsize=6)
@@ -188,35 +196,33 @@ def plot_modulation_time_courses_by_region(df, y_col='frs', estimator='median', 
 
     if save:
         suffix = '2groups_' if split_by_age else ''
-        fig.savefig(os.path.join(C.FIGPATH, f"Slice_org_modulation_{suffix}{y_col}_timecourse_{C.ALIGN_EVENT}.pdf"), dpi=300)
-    #plt.show()()
+        fname = C.FIGPATH / f"Slice_org_modulation_{suffix}{y_col}_timecourse_{C.ALIGN_EVENT}.pdf"
+        save_figure(fig, fname, add_timestamp=True)
 
 
 def main():
 
     print(f"Loading df_all_conditions ...")
     df_cond_path = C.DATAPATH / f"ibl_BWMLL_FFs_{C.ALIGN_EVENT}_{C.TRIAL_TYPE}_conditions_2025.parquet"
-    df_cond = read_table (df_cond_path)
-    df_cond['age_group'] = df_cond['mouse_age'].map(lambda x: 'old' if x > C.AGE_GROUP_THRESHOLD else 'young')
-    df_cond['abs_contrast'] = df_cond['signed_contrast'].abs()/100
-
+    df_cond = read_table(df_cond_path)
+    df_cond = add_age_group(df_cond)
     print(f"Plotting omnibus frs contrast modulation time courses...")
     plot_modulation_time_courses_pooled(df_cond, y_col='frs', estimator='mean', granularity='neuron_level',split_by_age=False, save=True)
 
     print(f"Plotting omnibus FFs contrast modulation time courses...")
     plot_modulation_time_courses_pooled(df_cond, y_col='FFs', estimator='mean', granularity='neuron_level',split_by_age=False, save=True)
 
-    # print(f"Plotting frs contrast modulation time courses by regions...")
-    # plot_modulation_time_courses_by_region(df_cond, y_col='frs', estimator='mean', granularity='neuron_level', split_by_age=False, save=True)
+    print(f"Plotting frs contrast modulation time courses by regions...")
+    plot_modulation_time_courses_by_region(df_cond, y_col='frs', estimator='mean', granularity='neuron_level', split_by_age=False, save=True)
 
-    # print(f"Plotting FFs contrast modulation time courses by regions...")
-    # plot_modulation_time_courses_by_region(df_cond, y_col='FFs', estimator='mean', granularity='neuron_level', split_by_age=False, save=True)
+    print(f"Plotting FFs contrast modulation time courses by regions...")
+    plot_modulation_time_courses_by_region(df_cond, y_col='FFs', estimator='mean', granularity='neuron_level', split_by_age=False, save=True)
 
-    # print(f"Plotting frs contrast modulation time courses by regions...[age group split]")
-    # plot_modulation_time_courses_by_region(df_cond, y_col='frs', estimator='mean', granularity='neuron_level', split_by_age=True, save=True)
+    print(f"Plotting frs contrast modulation time courses by regions...[age group split]")
+    plot_modulation_time_courses_by_region(df_cond, y_col='frs', estimator='mean', granularity='neuron_level', split_by_age=True, save=True)
 
-    # print(f"Plotting FFs contrast modulation time courses by regions...[age group split]")
-    # plot_modulation_time_courses_by_region(df_cond, y_col='FFs', estimator='mean', granularity='neuron_level', split_by_age=True, save=True)
+    print(f"Plotting FFs contrast modulation time courses by regions...[age group split]")
+    plot_modulation_time_courses_by_region(df_cond, y_col='FFs', estimator='mean', granularity='neuron_level', split_by_age=True, save=True)
 
 
     # print(f"Plotting omnibus frs contrast modulation time courses...") # split by age
@@ -227,4 +233,7 @@ def main():
 
 
 if __name__ == "__main__":
+    from scripts.utils.io import setup_logging
+    setup_logging()
+
     main()

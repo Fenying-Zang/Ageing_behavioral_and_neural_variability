@@ -3,42 +3,35 @@
 input: data/training_history_149subjs_2025_NEW.parquet
 output: figures/Fig1S1_training_history_stats.pdf
 
-Figure: Fig1-supp 2 — Older mice took longer to learn the task (same protocols)
+Figure: Fig1-S1 — Older mice took longer to learn the task (same protocols)
 1) training time course from start / get_trained
 2) performance (easy) on day of get_trained / first_recording
 3) #days/sessions/trials until first recording / get_trained
 
 """
 #%%
-# =====================
-# Imports
-# =====================
-from __future__ import annotations
 
+from __future__ import annotations
 import os
 import numpy as np
 import pandas as pd
 import seaborn as sns
-import matplotlib.pyplot as plt
-import scipy as sp
-from joblib import Parallel, delayed
-from tqdm import tqdm
 import figrid as fg
 from ibl_style.utils import get_coords, MM_TO_INCH, double_column_fig
 from scripts.utils.plot_utils import figure_style
 
-from statsmodels.formula.api import glm
 from statsmodels.genmod.families import Gaussian
-from statsmodels.genmod.families import Gamma
-from statsmodels.genmod.families.links import Log
-from scripts.utils.permutation_test import plot_permut_test
-from scripts.utils.data_utils import (shuffle_labels_perm, bf_gaussian_via_pearson, interpret_bayes_factor,
-                                      add_age_group)
+from scripts.utils.data_utils import (
+    bf_gaussian_via_pearson, 
+    interpret_bayes_factor,
+    add_age_group)
 from scripts.utils.plot_utils import format_bf_annotation
-from scripts.utils.io import read_table
-from scripts.utils.stats_utils import single_permutation, run_permutation_test
-
+from scripts.utils.io import read_table, save_figure
+from scripts.utils.stats_utils import run_permutation_test
+import logging
 import config as C
+
+log = logging.getLogger(__name__)
 # =====================
 # Config 
 # =====================
@@ -54,7 +47,7 @@ FAMILY_FUNC = Gaussian()
 
 def prepare_training_table(df):
     
-    """Add 'age_months' (=mouse_age/30), 'age_years' (=mouse_age/365), and 'age_group'; return a copy."""
+    """Add 'age_months', 'age_years', and 'age_group'; return a copy."""
 
     df = df.copy()
     df = add_age_group(df)
@@ -73,7 +66,7 @@ def subset_for_criterion(df, criterion):
         raise ValueError(f"Unknown criterion: {criterion}")
     
     
-def aggregate_until_criterion(df) :
+def aggregate_until_criterion(df):
     """
     Aggregate per-mouse totals (num_days/sessions/trials) and attach age bins; 
     input df already filtered to the criterion window.
@@ -108,48 +101,6 @@ def extract_stats(df, key_col, key_val):
     p_adj = row["p_corrected"].values[0] if "p_corrected" in row else np.nan
     sig = row["reject"].values[0] if "reject" in row else np.nan
     return beta, p_adj, p_perm, sig
-
-
-# def single_permutation(i, data, permuted_label, *,
-#                        formula, family_func=Gamma(link=Log())) :
-#     """Fit GLM once with permuted 'age_years'; return the fitted coefficient for 'age_years' (np.nan on failure)."""
-
-#     try:
-#         shuffled = data.copy()
-#         shuffled["age_years"] = permuted_label
-#         model = glm(formula=formula, data=shuffled, family=family_func).fit()
-#         return model.params["age_years"]
-#     except Exception as e:
-#         print(f"Permutation {i} failed: {e}")
-#         return np.nan
-
-
-# def run_permutation_test(data, age_labels, *, formula,
-#                           family_func=FAMILY_FUNC, shuffling=SHUFFLING,
-#                           n_permut=C.N_PERMUT_BEHAVIOR, n_jobs=N_JOBS,
-#                           random_state=C.RANDOM_STATE, plot=False):
-#     """Permutation test for the 'age_years' term in a GLM; returns (observed_beta, glm_p, perm_p, valid_null)."""
-
-#     permuted_labels, _ = shuffle_labels_perm(
-#         labels1=age_labels, labels2=None, shuffling=shuffling,
-#         n_permut=n_permut, random_state=random_state, n_cores=n_jobs,
-#     )
-#     null_dist = Parallel(n_jobs=n_jobs)(
-#         delayed(single_permutation)(i, data, permuted_labels[i], formula=formula, family_func=family_func)
-#         for i in tqdm(range(n_permut))
-#     )
-#     null_dist = np.asarray(null_dist)
-#     valid_null = null_dist[~np.isnan(null_dist)]
-
-#     model_obs = glm(formula=formula, data=data, family=family_func).fit()
-#     observed_val = model_obs.params["age_years"]
-#     observed_val_p = model_obs.pvalues["age_years"]
-#     p_perm = (np.sum(np.abs(valid_null) >= np.abs(observed_val)) + 1) / (len(valid_null) + 1)
-
-#     if plot:
-#         plot_permut_test(null_dist=valid_null, observed_val=observed_val, p=p_perm, mark_p=None)
-
-#     return observed_val, observed_val_p, p_perm, valid_null
 
 
 def fmt_age_annotation(beta, p_perm, data_for_bf, y_col):
@@ -201,7 +152,6 @@ def build_figure_layout():
 def plot_training_comparison_group_mean(training_table, *, x, alignment,
                                         palette=C.PALETTE, ax=None):
     """Group-mean time course of 'perf_easy' by age_group for a given timeline x; draws cutoffs/labels; returns ax."""
-
 
     if x == "num_days_from_recording":
         data2plot = training_table[~training_table["num_days_from_recording"].isna()]
@@ -539,10 +489,12 @@ def main():
     #plt.show()()
     if SAVE_FIGURES:
         os.makedirs(C.FIGPATH, exist_ok=True)
-        fig.savefig(os.path.join(C.FIGPATH, "Fig1S1_training_history_stats.pdf"))
+        save_figure(fig, C.FIGPATH / "Fig1S1_training_history_stats.pdf", add_timestamp=True)
 
 
 if __name__ == "__main__":
+    from scripts.utils.io import setup_logging
+    setup_logging()
     main()
 
 

@@ -1,7 +1,7 @@
 """
 
 plot singleFF (var vs mean) scatter plot
-neural_07_singleFF_logscatter.py
+Figure 4 S1. The relationship between spike count variance and spike count mean.
 
 """
 import config as C
@@ -13,6 +13,13 @@ import figrid as fg
 from ibl_style.utils import get_coords, MM_TO_INCH, double_column_fig
 from scripts.utils.plot_utils import figure_style
 from scripts.utils.io import read_table,save_figure
+from scripts.utils.io import read_table, save_figure, setup_logging
+import logging
+
+
+setup_logging()
+log = logging.getLogger(__name__)
+
 
 def create_slice_org_axes_singleFF(fg, MM_TO_INCH, fig=None):
 
@@ -117,11 +124,10 @@ def plot_singleFF_mean_var(df, timepoint, save=True):
 
     if save:
         if timepoint==C.PRE_TIME:
-            save_figure(fig,C.FIGPATH / f"single_FF_logscatter_pre-stim_{C.ALIGN_EVENT}.pdf")
+            save_figure(fig, C.FIGPATH / f"single_FF_logscatter_pre-stim_{C.ALIGN_EVENT}.pdf", add_timestamp=True)
         elif timepoint==C.POST_TIME:
-            save_figure(fig,C.FIGPATH / f"single_FF_logscatter_post-stim_{C.ALIGN_EVENT}.pdf")
+            save_figure(fig, C.FIGPATH / f"single_FF_logscatter_post-stim_{C.ALIGN_EVENT}.pdf", add_timestamp=True)
 
-    #plt.show()()
 
 def main():
     
@@ -134,7 +140,12 @@ def main():
     plot_singleFF_mean_var(df_cond, C.PRE_TIME, save=True)
     plot_singleFF_mean_var(df_cond, C.POST_TIME, save=True)
 
+
 if __name__ == "__main__":
+    from scripts.utils.io import setup_logging
+    setup_logging()
+    
+
     main()
 
 

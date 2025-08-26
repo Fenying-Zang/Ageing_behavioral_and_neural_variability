@@ -1,3 +1,17 @@
+"""
+Utility functions for data handling, shuffling, statistics, and age labeling.
+
+Functions
+---------
+- load_filtered_recordings : Load list of sessions/probes after QC.
+- normalize_units          : Min-max normalize neural data across units.
+- shuffle_labels_perm      : Permutation shuffling for labels (age, sessions).
+- fdr_correct_by_group     : Apply FDR correction within groups.
+- bf_gaussian_via_pearson  : Bayes Factor via Pearson correlation.
+- interpret_bayes_factor   : Translate BF value into qualitative interpretation.
+- add_age_group            : Add categorical age groups (young/old) and scaled age.
+"""
+
 import numpy as np
 import pandas as pd
 from joblib import Parallel, delayed
@@ -9,12 +23,19 @@ import config as C
 
 def load_filtered_recordings(datapath=C.DATAPATH, filename = 'BWM_LL_release_afterQC_df.csv'):
     """
-    
-    paras:
-    matrix -- filename and position
-    
-    return:
-    result -- filtered recordings
+    Load a pre-filtered recordings table (after QC).
+
+    Parameters
+    ----------
+    datapath : Path
+        Base path to data folder (default: C.DATAPATH).
+    filename : str
+        CSV file with filtered sessions/probes.
+
+    Returns
+    -------
+    recordings_filtered : pd.DataFrame
+        Loaded DataFrame.
     """
     try:
         recordings_filtered = pd.read_csv( datapath / f"{filename}" )
@@ -26,24 +47,24 @@ def load_filtered_recordings(datapath=C.DATAPATH, filename = 'BWM_LL_release_aft
 
 def normalize_units(matrix):
     """
-    
-    paras:
-    matrix --  (trials, units, timepoints) array
-    
-    return:
-    result -- normalized (trials, units, timepoints) array
+    Normalize neural activity per unit (min-max scaling).
+
+    Parameters
+    ----------
+    matrix : np.ndarray
+        Shape (trials, units, timepoints).
+
+    Returns
+    -------
+    result : np.ndarray
+        Normalized array with same shape, values in [0, 1].
     """
     trials, units, timepoints = matrix.shape
-    
     result = np.zeros_like(matrix)
-    # normalized_data
     
     for i in range(units):
         data = matrix[:, i, :].flatten()
-        
-        
-        min_val = np.min(data)
-        max_val = np.max(data)
+        min_val, max_val = np.min(data), np.max(data)
 
         # max-min normalization if max_val> min_val
         if max_val > min_val:
@@ -57,28 +78,38 @@ def normalize_units(matrix):
 
 def shuffle_labels_perm(labels1, labels2, n_permut=1, shuffling='labels1_based_on_2', n_cores=1, random_state=None):
     """
-    Shuffle labels1 (e.g., age) based on labels2 (e.g., session), preserving group-level label sharing.
-    
-    Parameters:
-        labels1: array-like, e.g., age per row
-        labels2: array-like, e.g., session per row
-        n_permut: int, number of permutations
-        shuffling: str, 'labels1_based_on_2' or 'labels1'
-        n_cores: int, number of cores for parallel processing
-        random_state: int or None, random seed for reproducibility
+    Shuffle labels for permutation testing.
 
-    Returns:
-        If n_permut == 1:
-            permuted_labels1: array
-            labels2: unchanged
-        Else:
-            permuted_labels1_list: list of arrays
-            labels2: unchanged
+    Modes
+    -----
+    - 'labels1_based_on_2': Shuffle labels1 across groups defined by labels2.
+    - 'labels1_global': Shuffle labels1 globally.
+
+    Parameters
+    ----------
+    labels1 : array-like
+        Values to shuffle (e.g., age labels).
+    labels2 : array-like or None
+        Grouping variable (e.g., session ID).
+    n_permut : int
+        Number of permutations.
+    shuffling : str
+        Shuffling mode ('labels1_based_on_2' or 'labels1_global').
+    n_cores : int
+        Number of CPU cores for parallelism.
+    random_state : int or None
+        Random seed for reproducibility.
+
+    Returns
+    -------
+    permuted_labels1 : np.ndarray or list of np.ndarray
+        Shuffled label arrays.
+    labels2 : array-like
+        Unchanged labels2.
     """
     labels1 = np.array(labels1)
     if labels2 is not None:
         labels2 = np.array(labels2)
-
 
     rng = np.random.default_rng(seed=random_state)
 
@@ -86,7 +117,7 @@ def shuffle_labels_perm(labels1, labels2, n_permut=1, shuffling='labels1_based_o
         if shuffling == 'labels1_based_on_2':
             if labels2 is None:
                 raise ValueError("labels2 must be provided for 'labels1_based_on_2' shuffling")
-
+            # Shuffle mapping at group level
             session2label1 = pd.Series(labels1).groupby(labels2).first()
             sessions = session2label1.index.values
             unique_vals = session2label1.values
@@ -110,77 +141,95 @@ def shuffle_labels_perm(labels1, labels2, n_permut=1, shuffling='labels1_based_o
         return permuted_labels1_list, labels2
 
 
-def fdr_correct_by_group(df, p_col='p', group_cols=None, alpha=0.05, method='fdr_bh'):
-    """
-    对 DataFrame 中按 group_cols 分组的 p 值列进行 FDR 校正。
+# def fdr_correct_by_group(df, p_col='p', group_cols=None, alpha=0.05, method='fdr_bh'):
+#    """
+#     Apply FDR correction to p-values, optionally within groups.
 
-    参数：
-        df: pd.DataFrame
-        p_col: str，表示存放原始 p 值的列名
-        group_cols: list 或 str，要分组的列名（可为空）
-        alpha: 显著性水平
-        method: FDR 校正方法，默认 'fdr_bh'
+#     Parameters
+#     ----------
+#     df : pd.DataFrame
+#         Must include a p-value column.
+#     p_col : str
+#         Name of column with raw p-values.
+#     group_cols : list or str or None
+#         Grouping columns. If None, correct across whole DataFrame.
+#     alpha : float
+#         Significance level.
+#     method : str
+#         FDR method for `multipletests` (default 'fdr_bh').
 
-    返回：
-        pd.DataFrame，增加了 'p_corrected' 和 'reject' 列
-    """
-    if group_cols is None:
-        group_cols = []
+#     Returns
+#     -------
+#     pd.DataFrame
+#         Original df + ['p_corrected', 'reject'] columns.
+#     """
+#     if group_cols is None:
+#         group_cols = []
 
-    def correct(group):
-        reject, p_corrected, _, _ = multipletests(group[p_col], alpha=alpha, method=method)
-        group = group.copy()
-        group['p_corrected'] = p_corrected
-        group['reject'] = reject
-        return group
+#     def correct(group):
+#         reject, p_corrected, _, _ = multipletests(group[p_col], alpha=alpha, method=method)
+#         group = group.copy()
+#         group['p_corrected'] = p_corrected
+#         group['reject'] = reject
+#         return group
 
-    if group_cols:
-        df_corrected = df.groupby(group_cols, group_keys=False).apply(correct)
-    else:
-        df_corrected = correct(df)
+#     if group_cols:
+#         df_corrected = df.groupby(group_cols, group_keys=False).apply(correct)
+#     else:
+#         df_corrected = correct(df)
 
-    return df_corrected
-
+#     return df_corrected
 
 
 def bf_gaussian_via_pearson(df: pd.DataFrame, y_col: str, x_col: str):
-    """
-    在 Gaussian + identity + 单自变量 场景下，
-    用 Pearson r 的 Bayes 因子等价评估 y ~ 1 + x 中 x 的效应。
-    
+   """
+    Bayes Factor for a simple linear relationship via Pearson r.
 
-    ----
+    Equivalent to testing β_x in y ~ x with Gaussian family + identity link.
+
+    Parameters
+    ----------
     df : pd.DataFrame
-    y_col : str metric
+        Data.
+    y_col : str
+        Dependent variable column.
     x_col : str
-    
-    ----
-    dict: {
-        'r': float,          # 皮尔逊相关
-        'BF10': float,       # 备择相对原假的证据
-    }
-    
-    ----
-    仅在 Gaussian family + identity link + 单一自变量 时，
-    与 OLS 回归中 β_age 的检验完全等价。
+        Independent variable column.
+
+    Returns
+    -------
+    dict
+        {'r': Pearson r, 'BF10': Bayes Factor}
     """
     sub = df[[y_col, x_col]].dropna()
     n = sub.shape[0]
     if n < 3:
-        raise ValueError("样本量太小（n<3）无法计算 Pearson r 的 BF。")
+        raise ValueError("Sample size too small (n<3) for Pearson BF.")
     
     r = pg.corr(sub[y_col], sub[x_col]).loc['pearson', 'r']
 
-    bf10 = pg.bayesfactor_pearson(r=r, n=n)  # JZS 默认先验 r=0.707，双尾
+    bf10 = pg.bayesfactor_pearson(r=r, n=n)  # JZS prior r=0.707
     return {'r': float(r), 'BF10': float(bf10)}
 
 
 def interpret_bayes_factor(bf):
+    """
+    Interpret Bayes Factor (BF10) with standard thresholds.
+
+    Parameters
+    ----------
+    bf : float
+
+    Returns
+    -------
+    str
+        Qualitative label (e.g., 'strong H1', 'moderate H0').
+    """
     try:
         bf = float(bf)
         if math.isnan(bf):
             return 'invalid BF'
-    except:
+    except Exception:
         return 'invalid BF'
     
     if bf > 10:
@@ -200,8 +249,21 @@ def interpret_bayes_factor(bf):
 
 
 def add_age_group(df):
-    """Return a copy with a categorical 'age_group' column based on C.AGE_GROUP_THRESHOLD.
-    Accepts age column named either 'mouse_age' or 'mouse_Age_at_recording' (in days).
+    """
+    Add age-related columns: categorical group + months + years.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Must contain 'mouse_age' (days) or 'age_at_recording' (days).
+
+    Returns
+    -------
+    pd.DataFrame
+        Copy with new columns:
+        - 'age_group' (young/old, by C.AGE_GROUP_THRESHOLD in days)
+        - 'age_months'
+        - 'age_years'
     """
     out = df.copy()
 
@@ -218,27 +280,3 @@ def add_age_group(df):
     
     return out
 
-
-
-    # # Mapping: session → age
-    # session2age = pd.Series(labels1).groupby(labels2).first()
-    # sessions = session2age.index.values
-    # unique_ages = session2age.values
-
-    # # Set up RNG
-    # rng = np.random.default_rng(seed=random_state)
-
-    # def single_permutation(rng_local):
-    #     shuffled_ages = rng_local.permutation(unique_ages)
-    #     new_mapping = dict(zip(sessions, shuffled_ages))
-    #     return np.array([new_mapping[sess] for sess in labels2])
-
-    # if n_permut == 1:
-    #     return single_permutation(rng), labels2
-    # else:
-    #     # Use different seeds for each job to ensure independence
-    #     seeds = rng.integers(0, 1e9, size=n_permut)
-    #     permuted_labels1_list = Parallel(n_jobs=n_cores)(
-    #         delayed(single_permutation)(np.random.default_rng(seed)) for seed in seeds
-    #     )
-    #     return permuted_labels1_list, labels2

@@ -1,13 +1,13 @@
 
 #%%
-import os
 import pandas as pd
 import numpy as np
 from sklearn.linear_model import LinearRegression
-
 import config as C
 from scripts.utils.io import read_table
+import logging
 
+log = logging.getLogger(__name__)
 
 def load_timecourse_data(df_path):
     """
@@ -53,6 +53,7 @@ def extract_pre_post_values(df, pre_time=C.PRE_TIME, post_time=C.POST_TIME, tol=
                 #TODO: if needed, add more 
             })
     return pd.DataFrame(metrics)
+
 
 def extract_pre_post_from_df_meansub(df, pre_time=C.PRE_TIME, post_time=C.POST_TIME, tol=C.TOLERANCE):
     """
@@ -116,36 +117,39 @@ def compute_modulation_index(df, metric_col):
     return pd.DataFrame(slopes)
 
 
-if __name__ == "__main__":
-
+def main():
     df_cond_path = C.DATAPATH / f"ibl_BWMLL_FFs_{C.ALIGN_EVENT}_{C.TRIAL_TYPE}_conditions_2025.parquet"
     df_meansub_path = C.DATAPATH / f"ibl_BWMLL_FFs_{C.ALIGN_EVENT}_{C.TRIAL_TYPE}_2025.parquet"
     out_path_cond = C.DATAPATH / "neural_metrics_summary_conditions.parquet"
     out_path_meansub = C.DATAPATH / "neural_metrics_summary_meansub.parquet"
 
-
-    print("Loading df_all_conditions...")
+    log.info("Loading df_all_conditions...")
     df_cond = load_timecourse_data(df_cond_path)
-    print("Extracting condition-based metrics...")
+    log.info("Extracting condition-based metrics...")
     df_summary = extract_pre_post_values(df_cond)
 
-    print("Computing contrast modulation indices...")
+    log.info("Computing contrast modulation indices...")
     ff_mod = compute_modulation_index(df_summary, 'ff_quench')
     fr_mod = compute_modulation_index(df_summary, 'fr_delta')
 
-    print("Merging condition-based results...")
+    log.info("Merging condition-based results...")
     final_cond = df_summary.merge(ff_mod, on=['uuids', 'cluster_region', 'mouse_age', 'session_pid'], how='left')
     final_cond = final_cond.merge(fr_mod, on=['uuids', 'cluster_region', 'mouse_age', 'session_pid'], how='left')
 
-    print(f"Saving to {out_path_cond}")
+    log.info(f"Saving to {out_path_cond}")
     final_cond.to_parquet(out_path_cond, index=False)
 
-    print("\nLoading df_all (mean-subtracted FF)...")
+    log.info("\nLoading df_all (mean-subtracted FF)...")
     df_meansub = load_timecourse_data(df_meansub_path)
-    print("Extracting mean-subtracted pre/post metrics...")
+    log.info("Extracting mean-subtracted pre/post metrics...")
     final_meansub = extract_pre_post_from_df_meansub(df_meansub)
 
-    print(f"Saving to {out_path_meansub}")
+    log.info(f"Saving to {out_path_meansub}")
     final_meansub.to_parquet(out_path_meansub, index=False)
 
 
+if __name__ == "__main__":
+    from scripts.utils.io import setup_logging
+    setup_logging()
+
+    main()

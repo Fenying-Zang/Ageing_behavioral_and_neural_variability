@@ -1,42 +1,103 @@
-
 """
-generate tables: trials table; training table
+Generate merged trials table for included EIDs.
 
-input: 
-output: ibl_included_eids_trials_table2025_full.csv
-
+Input:
+    - Filtered recordings file produced by the QC pipeline (BWM_LL_release_afterQC_df.csv)
+Output:
+    - ibl_included_eids_trials_table2025_full.csv
 """
-#%%
-import os
+
+# %%
+import logging
+from pathlib import Path
 import pandas as pd
-
-import numpy as np
-from datetime import datetime
 from one.api import ONE
-import os, sys
-from scripts.utils.data_utils import load_filtered_recordings
-from scripts.utils.behavior_utils import create_trials_table
 import config as C
+from scripts.utils.data_utils import load_filtered_recordings, add_age_group
+from scripts.utils.behavior_utils import create_trials_table
+
+log = logging.getLogger(__name__)
+
+
+def main():
+    one = ONE()
+
+    # --- Load filtered sessions produced by the QC pipeline
+    recordings_filtered = load_filtered_recordings(filename="BWM_LL_release_afterQC_df.csv")
+    eids = recordings_filtered["eid"].astype(str).unique().tolist()
+    log.info(f"{len(eids)} sessions remaining after QC")
+
+    # --- Build merged trials table from the included sessions
+    trials_table, err_list = create_trials_table(eids, one) #DONE: test a few eids
+
+    # Optional: basic annotations (e.g., age group)
+    trials_table = add_age_group(trials_table) 
+
+    # --- Save
+    outpath = C.DATAPATH / "ibl_included_eids_trials_table2025_full.csv"
+    outpath.parent.mkdir(parents=True, exist_ok=True)
+    trials_table.to_csv(outpath, index=False)
+
+    # --- Logging: summary + errors (if any)
+    n_mice = trials_table["mouse_name"].nunique() if "mouse_name" in trials_table.columns else "NA"
+    n_trials = len(trials_table)
+    log.info(f"New trials table saved: {outpath.resolve()}")
+    log.info(f"{n_mice} mice, {n_trials} trials")
+
+    if err_list:
+        log.warning(f"Encountered {len(err_list)} errors while fetching trials (showing up to 5):")
+        for e in err_list[:5]:
+            log.warning(f"  - {e}")
+
 
 if __name__ == "__main__":
-    
-    one= ONE()
+    from scripts.utils.io import setup_logging
 
-    #load filtered eid list
-    recordings_filtered = load_filtered_recordings(C.DATAPATH)
-    eids = recordings_filtered['eid'].astype(str).unique().tolist()
-    # eids = ['85dc2ebd-8aaf-46b0-9284-a197aee8b16f','f88d4dd4-ccd7-400e-9035-fa00be3bcfa8']
-    print(len(eids))
+    setup_logging()
+    main()
 
-    #merged trials table:
-    trials_table, err_list = create_trials_table(eids[0:40], one)
-    trials_table['age_group'] = (trials_table['mouse_age'] > C.AGE_GROUP_THRESHOLD).map({True: "old", False: "young"})
-    trials_table_file = os.path.join(C.DATAPATH, 'ibl_included_eids_trials_table2025_full.csv') 
-    trials_table.to_csv(trials_table_file)
+
+
+
+# #%%
+# import os
+# import pandas as pd
+# import numpy as np
+# from datetime import datetime
+# from one.api import ONE
+# import os, sys
+# from scripts.utils.data_utils import load_filtered_recordings, add_age_group
+# from scripts.utils.behavior_utils import create_trials_table
+# import logging
+# import config as C
+# log = logging.getLogger(__name__)
+
+# def main():
+#     one= ONE()
+
+#     #load filtered eid list
+#     recordings_filtered = load_filtered_recordings(filename='BWM_LL_release_afterQC_df.csv')
+#     eids = recordings_filtered['eid'].astype(str).unique().tolist()
+#     # eids = ['85dc2ebd-8aaf-46b0-9284-a197aee8b16f','f88d4dd4-ccd7-400e-9035-fa00be3bcfa8']
+#     log.info(f'{len(eids)} sessions remaining')
+
+#     #merged trials table:
+#     trials_table, err_list = create_trials_table(eids, one) #TODO:
+#     trials_table = add_age_group(trials_table)
+#     trials_table_file = C.DATAPATH / 'ibl_included_eids_trials_table2025_full.csv'
+#     trials_table.to_csv(trials_table_file)
     
-    print('new trial table saved here: ', trials_table_file)
-    print(f'{trials_table.mouse_name.nunique()} mice, {trials_table.mouse_name.count()} trials')  #147 mice, 236118 trials
-#%%
-# trials_table = trials_table.drop_duplicates(keep='first')
-# print(len(trials_table.eid))
-# print(trials_table.eid.nunique())
+#     log.info(f'New trial table saved here: {trials_table_file}')
+#     log.info(f'{trials_table.mouse_name.nunique()} mice, {trials_table.mouse_name.count()} trials')  #147 mice, 236118 trials
+
+
+# if __name__ == "__main__":
+
+#     from scripts.utils.io import setup_logging
+#     setup_logging()
+
+#     main()
+# #%%
+# # trials_table = trials_table.drop_duplicates(keep='first')
+# # print(len(trials_table.eid))
+# # print(trials_table.eid.nunique())

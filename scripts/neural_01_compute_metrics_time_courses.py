@@ -12,22 +12,21 @@ import traceback
 import os
 import pandas as pd
 import numpy as np
-from datetime import datetime
 from pathlib import Path
 from one.api import ONE
 from iblatlas.atlas import AllenAtlas
-from brainbox.population.decode import get_spike_counts_in_bins
-from brainbox.task.closed_loop import compute_comparison_statistics
 from brainbox.io.one import SpikeSortingLoader
 from iblutil.numerical import ismember
 from iblatlas.regions import BrainRegions
 from scripts.utils.neuron_utils import cal_presence_ratio, combine_regions, smoothing_sliding
-from scripts.utils.behavior_utils import clean_rts, filter_trials
+from scripts.utils.behavior_utils import clean_rts
 from glob import glob
 import logging
 from scripts.utils.io import read_table
 
-def clean_rt_table(trials_table,rt_variable ):
+log = logging.getLogger(__name__)
+
+def clean_rt_table(trials_table, rt_variable):
 
     trials_table['rt_raw'] = trials_table[rt_variable].copy()
     trials_table['rt'] = clean_rts(trials_table[rt_variable], cutoff=C.RT_CUTOFF)    
