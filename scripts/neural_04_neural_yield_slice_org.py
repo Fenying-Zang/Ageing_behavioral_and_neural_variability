@@ -27,7 +27,6 @@ log = logging.getLogger(__name__)
 def load_neural_yield_table():
     """Load yield parquet, derive neural_yield, add age fields/group."""
     table = read_table(
-        # os.path.join(C.DATAPATH, f'ibl_BWMLL_neural_yield_{C.ALIGN_EVENT}_{C.TRIAL_TYPE}_2025_merged.parquet'))
         os.path.join(C.DATAPATH, f'ibl_BWMLL_neural_yield_{C.ALIGN_EVENT}_{C.TRIAL_TYPE}_2025.parquet'))
 
     table['neural_yield'] = table['n_cluster'] / table['n_channel']
@@ -161,7 +160,8 @@ def main():
     log.info("Loading data...")
     neural_yield_table = load_neural_yield_table()
 
-    for y_var in ['n_cluster', 'neural_yield']:
+    # for y_var in ['n_cluster', 'neural_yield']:
+    for y_var in ['neural_yield']: #Now we only use neural_yield in fig
         permut_df = get_permut_results(y_var, C.AGE2USE, neural_yield_table)
         bf_df = get_bf_results(y_var, C.AGE2USE, neural_yield_table)
         plot_yield_by_region(neural_yield_table, permut_df, bf_df, y_var)

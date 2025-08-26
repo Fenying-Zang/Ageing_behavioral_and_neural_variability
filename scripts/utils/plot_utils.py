@@ -97,7 +97,7 @@ def figure_style():
 
 
 def create_slice_org_axes(fg, MM_TO_INCH, fig=None):
-   """
+    """
     Create a slice-organized layout of brain regions (IBL atlas standard).
 
     Parameters
@@ -136,6 +136,7 @@ def create_slice_org_axes(fg, MM_TO_INCH, fig=None):
     }
 
     return fig, axs
+
 
 def plot_psychometric(x, y, subj, **kwargs):
     """

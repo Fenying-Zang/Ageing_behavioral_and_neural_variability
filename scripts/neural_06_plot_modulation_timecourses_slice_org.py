@@ -206,6 +206,8 @@ def main():
     df_cond_path = C.DATAPATH / f"ibl_BWMLL_FFs_{C.ALIGN_EVENT}_{C.TRIAL_TYPE}_conditions_2025.parquet"
     df_cond = read_table(df_cond_path)
     df_cond = add_age_group(df_cond)
+    df_cond['abs_contrast'] = df_cond['signed_contrast'].abs()/100
+
     print(f"Plotting omnibus frs contrast modulation time courses...")
     plot_modulation_time_courses_pooled(df_cond, y_col='frs', estimator='mean', granularity='neuron_level',split_by_age=False, save=True)
 

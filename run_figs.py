@@ -29,6 +29,7 @@ STEPS = [
 
 ]
 
+
 def run(mod):
     print(f"\n=== Running {mod} ===")
     subprocess.check_call([sys.executable, "-m", mod])

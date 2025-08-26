@@ -182,7 +182,7 @@ def shuffle_labels_perm(labels1, labels2, n_permut=1, shuffling='labels1_based_o
 
 
 def bf_gaussian_via_pearson(df: pd.DataFrame, y_col: str, x_col: str):
-   """
+    """
     Bayes Factor for a simple linear relationship via Pearson r.
 
     Equivalent to testing β_x in y ~ x with Gaussian family + identity link.

@@ -488,8 +488,6 @@ if __name__ == "__main__":
     print(len(set(trials_table.eid)))
 
     recordings_filtered = read_table(C.DATAPATH / 'BWM_LL_release_afterQC_df.csv')
-    #TODO: 为啥去掉了3个pids?
-    # recordings_filtered = recordings_filtered[~recordings_filtered['pid'].isin(notget_pids)]
 
     ba = AllenAtlas()
     br = BrainRegions()
@@ -500,7 +498,6 @@ if __name__ == "__main__":
     list_ind = []
     all_pids_to_use = recordings_filtered['pid'].to_list()
     for index, row in recordings_filtered.iterrows():
-        #TODO: 确认之后，去掉那4个？
         pid = row['pid']
         if pid in ['57edc590-a53d-403c-9aab-d58ee51b6a24', 'daadb3f1-bef2-474e-a659-72922f3fcc5b', '61bb2bcd-37b4-4bcc-8f40-8681009a511a', 'ee2ce090-696a-40f5-8f29-7107339bf08e']:
             continue
