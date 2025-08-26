@@ -1,3 +1,31 @@
+"""
+Summarize pre/post FR, pre/post FF, FF quench and compute simple contrast modulation indices for FR and FF.
+
+
+This script reads the time-course parquet files produced by the 'neural_01_compute_metrics_time_courses.py' pipeline and outputs two compact tables:
+
+
+1) Condition-split summary (`final_cond`):
+For each neuron (uuid) X signed_contrast, extract pre/post values at C.PRE_TIME and C.POST_TIME (within tolerance C.TOLERANCE) for FF/FR, and
+compute deltas (post - pre). Also adds |contrast| as a 0-1 scaled regressor (abs_contrast = |signed_contrast|/100) and per-neuron modulation slopes
+wrt abs_contrast for ff_quench (ΔFF) and fr_delta (ΔFR).
+
+
+2) Mean-subtracted summary (`final_meansub`):
+From the residual (mean-subtracted across conditions) table, extract pre/post FF_residuals and compute deltas (FF quench) per neuron.
+
+
+Inputs
+------
+• C.DATAPATH / f"ibl_BWMLL_FFs_{ALIGN_EVENT}_{TRIAL_TYPE}_conditions_2025.parquet"
+• C.DATAPATH / f"ibl_BWMLL_FFs_{ALIGN_EVENT}_{TRIAL_TYPE}_2025.parquet"
+
+
+Outputs
+-------
+• C.DATAPATH / "neural_metrics_summary_conditions.parquet"
+• C.DATAPATH / "neural_metrics_summary_meansub.parquet"
+"""
 
 #%%
 import pandas as pd
@@ -16,14 +44,28 @@ def load_timecourse_data(df_path):
     return read_table(df_path)
 
 def extract_pre_post_values(df, pre_time=C.PRE_TIME, post_time=C.POST_TIME, tol=C.TOLERANCE):
-    """
-    Extract pre/post values at specified timepoints for FF and FR.
-    Assumes df has one row per neuron × contrast × timepoint.
+    """Extract PRE/POST values at specified timepoints for FF and FR.
+
+
+    Assumes `df` has one row per neuron x stimulus x timepoint with columns:
+    'uuids', 'signed_contrast', 'timepoints', 'FFs', 'frs', 'n_trials',
+    'cluster_region', 'mouse_age', 'mouse_sub_name', 'session_pid', 'session_eid'.
+
+
+    The function keeps the current behavior: require exactly one row found for
+    PRE and POST within ±tol; otherwise that (uuid, contrast) is skipped.
+
+
+    Returns
+    -------
+    pd.DataFrame
+    One row per (uuid, signed_contrast) with PRE/POST values, deltas, and
+    copied metadata. Adds 'abs_contrast' in [0, 1].
     """
     metrics = []
     grouped = df.groupby(['uuids', 'signed_contrast'])
     for (uid, contrast), group in grouped:
-
+        # Locate samples around PRE/POST
         pre_row = group[np.abs(group['timepoints'] - pre_time) < tol]
         post_row = group[np.abs(group['timepoints'] - post_time) < tol]
 
@@ -34,7 +76,7 @@ def extract_pre_post_values(df, pre_time=C.PRE_TIME, post_time=C.POST_TIME, tol=
                 'uuids': uid,
                 'signed_contrast': contrast,
                 'n_trials': pre_row['n_trials'].values[0],
-                'abs_contrast': abs(contrast)/100,   # 新增
+                'abs_contrast': abs(contrast)/100,   
                 'pre_ff': pre_row['FFs'].values[0],
                 'post_ff': post_row['FFs'].values[0],
                 'ff_quench': ff_delta,
@@ -47,14 +89,16 @@ def extract_pre_post_values(df, pre_time=C.PRE_TIME, post_time=C.POST_TIME, tol=
                 'mouse_sub_name': pre_row['mouse_sub_name'].values[0],
                 'session_pid': pre_row['session_pid'].values[0],
                 'session_eid': pre_row['session_eid'].values[0]
-                #TODO: if needed, add more 
             })
     return pd.DataFrame(metrics)
 
 
 def extract_pre_post_from_df_meansub(df, pre_time=C.PRE_TIME, post_time=C.POST_TIME, tol=C.TOLERANCE):
-    """
-    Extract pre/post FF and FR from df_all (mean-subtracted version), no contrast splitting.
+    """Extract PRE/POST FF/FR from mean‑subtracted table (no contrast split).
+
+    Uses columns:
+    'uuids', 'timepoints', 'FFs_residuals', 'frs_residuals', 'n_trials',
+    'cluster_region', 'mouse_age', 'mouse_sub_name', 'session_pid', 'session_eid'.
     """
     metrics = []
     grouped = df.groupby('uuids')
@@ -83,9 +127,13 @@ def extract_pre_post_from_df_meansub(df, pre_time=C.PRE_TIME, post_time=C.POST_T
 
 
 def compute_modulation_index(df, metric_col):
-    """
-    Compute slope of metric_col vs. signed_contrast as contrast modulation index.
-    Returns: DataFrame with one row per neuron (uuids).
+    """Compute slope of `metric_col` vs. |contrast| as a simple modulation index.
+
+    For each neuron (uuid), fit a univariate linear regression:
+    metric ~ 1 + abs_contrast
+    and report the coefficient of `abs_contrast`.
+
+    Skips a neuron if <5 valid contrast entries are available.
     """
     slopes = []
     grouped = df.groupby('uuids')
@@ -94,7 +142,7 @@ def compute_modulation_index(df, metric_col):
         #     continue  # skip if contrast not enough
         group = group.dropna(subset=['abs_contrast', metric_col])
         if len(group) < 5:
-            print(f"Skipping {uid}: too few valid contrast levels ({len(group)})")
+            # print(f"Skipping {uid}: too few valid contrast levels ({len(group)})")
             continue
 
         # X = group[['signed_contrast']].values.reshape(-1, 1)
@@ -120,6 +168,7 @@ def main():
     out_path_cond = C.DATAPATH / "neural_metrics_summary_conditions.parquet"
     out_path_meansub = C.DATAPATH / "neural_metrics_summary_meansub.parquet"
 
+    # --- Condition‑split pipeline ---
     log.info("Loading df_all_conditions...")
     df_cond = load_timecourse_data(df_cond_path)
     log.info("Extracting condition-based metrics...")
@@ -130,12 +179,14 @@ def main():
     fr_mod = compute_modulation_index(df_summary, 'fr_delta')
 
     log.info("Merging condition-based results...")
+    # Merge keys chosen to match your current code; ensure they exist in both
     final_cond = df_summary.merge(ff_mod, on=['uuids', 'cluster_region', 'mouse_age', 'session_pid'], how='left')
     final_cond = final_cond.merge(fr_mod, on=['uuids', 'cluster_region', 'mouse_age', 'session_pid'], how='left')
 
     log.info(f"Saving to {out_path_cond}")
     final_cond.to_parquet(out_path_cond, index=False)
 
+    # --- Mean‑subtracted (residual) pipeline ---
     log.info("\nLoading df_all (mean-subtracted FF)...")
     df_meansub = load_timecourse_data(df_meansub_path)
     log.info("Extracting mean-subtracted pre/post metrics...")
@@ -148,5 +199,4 @@ def main():
 if __name__ == "__main__":
     from scripts.utils.io import setup_logging
     setup_logging()
-
     main()
