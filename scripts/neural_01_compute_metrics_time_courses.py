@@ -694,7 +694,7 @@ if __name__ == "__main__":
             print(f"Skipping already processed pid: {pid}")
             continue
 
-        print(f'processing {index + 1}/{len(recordings_filtered)}') #
+        print(f'processing {index + 1}/{len(recordings_filtered)}')
 
         try:
             list_ind.append(index)

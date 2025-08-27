@@ -2,6 +2,6 @@ QC item,level,n_sessions_IBL,n_probes_IBL,n_sessions_New,n_probes_New
 Session and insertion QC,"probe,session",459,699,38,64
 Response time and missing events,trials,459,699,38,64
 Minimum 3 error trials,session,459,699,38,64
-Single unit QC,neuron,458,695,38,68
-ROIs only,neuron,329,439,38,68
-Minimum 2 sessions per region,neuron,329,439,38,68
+Single unit QC,neuron,458,695,38,64
+ROIs only,neuron,329,439,38,64
+Minimum 2 sessions per region,neuron,329,439,38,64

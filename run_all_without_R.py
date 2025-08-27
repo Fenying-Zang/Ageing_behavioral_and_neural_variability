@@ -1,12 +1,12 @@
 """
-run_full_withour_R.py
+run_full_without_R.py
 
-Master script to run the **entire pipeline** end-to-end:
+Master script to run the **pipeline** (skipping Bayes Factors):
     1. Data query and preprocessing
     2. Data preparation and analysis (behavioral + neural)
     3. Figure generation
 
-This ensures all intermediate results and figures can be reproduced
+This ensures all intermediate results (skipping Bayes Factors) and figures can be reproduced
 from scratch with a single command.
 """
 import sys, subprocess, config as C

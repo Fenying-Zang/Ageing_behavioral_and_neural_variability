@@ -1,0 +1,3 @@
+num_days_from_recording,y_var,n_perm,formula,observed_val,observed_val_p,p_perm,ave_null_dist
+-5,perf_easy,100,perf_easy ~ age_years,0.043810188438879176,0.31570837515049066,0.2871287128712871,0.0030134809673506052
+-10,perf_easy,100,perf_easy ~ age_years,0.06502153478228956,0.26089736019387,0.2871287128712871,-0.00783564449977187

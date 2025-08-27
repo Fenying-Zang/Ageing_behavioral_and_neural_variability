@@ -107,7 +107,9 @@ def filter_sessions_insertions(query_insertions, trials_df, clus_df, rt_range, m
     outcomes.append(summarize_QC(f'Minimum {min_errors} error trials', 'session', valid_sessions, clus_df))
 
     # --- Level 4: Neuron-level QC
-    clus_df = clus_df[clus_df['eid'].isin(valid_sessions['eid'].unique())].copy()
+    # clus_df = clus_df[clus_df['eid'].isin(valid_sessions['eid'].unique())].copy()
+    clus_df = clus_df[clus_df['pid'].isin(valid_sessions['pid'].unique())].copy()
+
     clus_df = clus_df[
         (clus_df['label'] >= min_qc) &
         (clus_df['firing_rate'] > 1) &
@@ -214,3 +216,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+# %%
