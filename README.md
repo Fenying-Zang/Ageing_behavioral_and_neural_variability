@@ -67,34 +67,40 @@ pip install -r requirements.txt
 
 ```
 ageing_behavioral_and_neural_variability/
-├── README.md          # Project overview and instructions
-├── LICENSE            # MIT license
-├── config.py          # Global variables
-├── run_figs.py        # Run this script to generate all figures
-├── run_all.py         # Run this script to  regenerate intermediate data from scratch all figures
-├── requirements.txt   # Extra Python deps on top of iblenv
-├── data/              # Intermediate or derived data (tracked via Git LFS)
-├── scripts/           # Python scripts for analysis and plotting
-│   └── utils/         # Shared helper functions
-├── figures_test/      # Output figures
-└── results/           # Output CSVs, summary tables
+├── README.md             # Project overview and setup instructions
+├── LICENSE               # MIT License
+├── config.py             # Global configuration variables
+├── run_figs.py           # Generate all figures
+├── run_all_with_R.py     # Full pipeline (requires R; regenerates intermediate data + all figures)
+├── run_all_without_R.py  # Full pipeline without R (skips Bayes Factors; regenerates remaining data + all figures)
+├── requirements.txt      # Additional Python dependencies (on top of iblenv)
+├── data/                 # Intermediate and derived data (tracked via Git LFS)
+├── scripts/              # Analysis and plotting code
+│   └── utils/            # Shared helper functions
+├── figures/              # Generated figures
+└── results/              # Output CSVs and summary tables
 ```
 
 ## Reproducing Figures
 
 ```bash
 # (Optional) Clear previously generated plots
-rm -rf figures_test/*
+rm -rf figures/*
 
 # Reproduce all manuscript figures from intermediate `.parquet` and `.csv` files
 # (located in `data/` and `results/`)
 # ⏱ Expected runtime: few minutes
 python run_figs.py
 
-# To recompute all intermediate data from raw sources and regenerate figures
-# (rebuilds `results/` and re-saves figures into `figures_test/`)
+# Recompute all intermediate data from raw sources and regenerate figures (requires R)
+# (overwrites files in `data/` and `results/`, re-saves figures in `figures/`)
 # ⏱ Expected runtime: several hours (depending on machine and data access)
-python run_all.py
+python run_all_with_R.py
+
+# Recompute all intermediate data from raw sources and regenerate figures (without R; skips Bayes Factors)
+# (overwrites files in `data/` and `results/`, re-saves figures in `figures/`)
+# ⏱ Expected runtime: several hours (depending on machine and data access)
+python run_all_without_R.py
 ```
 
 ## Data

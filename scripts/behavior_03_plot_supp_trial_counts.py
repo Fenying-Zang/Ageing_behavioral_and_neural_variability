@@ -93,9 +93,9 @@ def main(save_fig=True):
                                     ).reset_index()
         num_trials_df = add_age_group(num_trials_df)
         age2use='age_years'
-        permut_filename = C.RESULTSPATH / f"t_num_{content}_trials_{age2use}_{C.N_PERMUT_BEHAVIOR}permutation.csv"
+        permut_filename = C.RESULTSPATH / f"num_{content}_trials_{age2use}_{C.N_PERMUT_BEHAVIOR}permutation.csv"
         p_perm, observed_val = get_permut_results(content, age2use='age_years', df=num_trials_df, filename=permut_filename) #TODO: 
-        BF_filename = C.RESULTSPATH / f"t_beyesfactor_{content}_trials.csv"
+        BF_filename = C.RESULTSPATH / f"beyesfactor_{content}_trials.csv"
         BF10, BF_conclusion = get_bf_results(content, df=num_trials_df, age2use='age_years', filename=BF_filename)
         ax = plot_single_scatterplot(num_trials_df, ax, p_perm, observed_val, BF10, BF_conclusion)
     

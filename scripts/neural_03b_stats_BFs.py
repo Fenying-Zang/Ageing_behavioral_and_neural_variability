@@ -19,7 +19,7 @@ import logging
 
 log = logging.getLogger(__name__)
 # ---------- R env ----------
-os.environ['R_HOME'] = r"C:/PROGRA~1/R/R-44~1.1"
+os.environ['R_HOME'] = r"C:/PROGRA~1/R/R-44~1.1" #TODO: costum your own R path here
 os.environ['R_USER'] = os.path.expanduser("~")
 os.environ["R_DISABLE_CONSOLE_OUTPUT"] = "TRUE"
 os.environ['RPY2_CFFI_MODE'] = 'ABI'  
@@ -283,4 +283,7 @@ if __name__ == "__main__":
     from scripts.utils.io import setup_logging
     setup_logging()
 
-    main(mean_subtraction = False, log_transform = True)
+    for mean_sub in (True, False):
+        logging.info(f"=== Run with mean_subtraction={mean_sub} ===")
+        main(mean_subtraction=mean_sub,
+             log_transform=True)

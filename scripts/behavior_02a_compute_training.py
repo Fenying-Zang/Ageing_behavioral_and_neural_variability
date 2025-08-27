@@ -36,7 +36,6 @@ def merge_full_training_trials(data=None):
         trials_table = trials_table.reset_index()
         training_table_list.append(trials_table)
     all_subj_tt_df = pd.concat(training_table_list, ignore_index=True) 
-    # if save_results:
     
     return all_subj_tt_df
 
@@ -48,7 +47,7 @@ def compute_training_history(data_info_unique, all_subj_tt_df):
     # data_info_temp = data_info_unique.head()
     for index, row in data_info_unique.iterrows():
     # for index, row in data_info_unique_test.iterrows():
-        print(f'processing {index + 1}/{len(data_info_unique)}') #
+        # print(f'processing {index + 1}/{len(data_info_unique)}') #
         subject = row['mouse_name']
         eid = row['eid']
         try:
@@ -91,7 +90,7 @@ def compute_training_history(data_info_unique, all_subj_tt_df):
             df_perf_easy['n_session'] = df_perf_easy.groupby(['trials_date'])['session'].transform('count')
             df_perf_easy['n_trials_day'] = df_perf_easy.groupby(['trials_date'])['n_trials_session'].transform('sum')
             #check the n_trials_day:
-            print(df_perf_easy['n_trials_day'].min(), df_perf_easy['n_trials_day'].max())
+            # print(df_perf_easy['n_trials_day'].min(), df_perf_easy['n_trials_day'].max())
             df_perf_easy = df_perf_easy[['trials_date','perf_easy','n_session','n_trials_day','training_status']].drop_duplicates().reset_index()
             # df_perf_easy = df_perf_easy
             #label the num_days_from_recording
@@ -170,7 +169,7 @@ def main(save_results=True):
         all_subj_tt_df = merge_full_training_trials(data=data_info_unique)
         all_subj_tt_df.to_parquet(merged_training_trials_file, engine='pyarrow', compression='snappy')
 
-    training_table = compute_training_history(one, data_info_unique, all_subj_tt_df)
+    training_table = compute_training_history(data_info_unique, all_subj_tt_df)
     
     if save_results:
         training_table['trials_date'] = pd.to_datetime(training_table['trials_date'])

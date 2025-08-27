@@ -132,7 +132,7 @@ def plot_singleFF_mean_var(df, timepoint, save=True):
 def main():
     
     print("Loading df_all_conditions...")
-    df_cond_path = C.DATAPATH / f"ibl_BWMLL_FFs_{C.ALIGN_EVENT}_{C.TRIAL_TYPE}_conditions_2025_merged.parquet"
+    df_cond_path = C.DATAPATH / f"ibl_BWMLL_FFs_{C.ALIGN_EVENT}_{C.TRIAL_TYPE}_conditions_2025.parquet"
     df_cond = read_table(df_cond_path)
     df_cond['age_group'] = df_cond['mouse_age'].map(lambda x: 'old' if x > C.AGE_GROUP_THRESHOLD else 'young')
     
@@ -145,7 +145,6 @@ if __name__ == "__main__":
     from scripts.utils.io import setup_logging
     setup_logging()
     
-
     main()
 
 

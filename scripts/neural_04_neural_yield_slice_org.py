@@ -35,7 +35,7 @@ def load_neural_yield_table():
 
 
 def get_permut_results (y_var, age2use, neural_yield_table):
-    filename = C.RESULTSPATH / f"t_regional_{y_var}_{age2use}_{C.N_PERMUT_NEURAL_REGIONAL}permutation.csv"
+    filename = C.RESULTSPATH / f"regional_{y_var}_{age2use}_{C.N_PERMUT_NEURAL_REGIONAL}permutation.csv"
     if filename.exists():
         permut_df = pd.read_csv(filename)
     else:
@@ -80,7 +80,7 @@ def get_permut_results (y_var, age2use, neural_yield_table):
 
 
 def get_bf_results(content, age2use, df):
-    filename = C.RESULTSPATH / f"t_regional_beyesfactor_{content}_NEW.csv"
+    filename = C.RESULTSPATH / f"regional_beyesfactor_{content}_NEW.csv"
     if filename.exists():
         BF_df = pd.read_csv(filename)
         # BF10 = BF_dict['BF10'].values[0]
@@ -161,10 +161,10 @@ def main():
     neural_yield_table = load_neural_yield_table()
 
     # for y_var in ['n_cluster', 'neural_yield']:
-    for y_var in ['neural_yield']: #Now we only use neural_yield in fig
-        permut_df = get_permut_results(y_var, C.AGE2USE, neural_yield_table)
-        bf_df = get_bf_results(y_var, C.AGE2USE, neural_yield_table)
-        plot_yield_by_region(neural_yield_table, permut_df, bf_df, y_var)
+    y_var = 'neural_yield' # Now we only use neural_yield in fig
+    permut_df = get_permut_results(y_var, C.AGE2USE, neural_yield_table)
+    bf_df = get_bf_results(y_var, C.AGE2USE, neural_yield_table)
+    plot_yield_by_region(neural_yield_table, permut_df, bf_df, y_var)
 
 
 if __name__ == "__main__":

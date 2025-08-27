@@ -162,7 +162,7 @@ def main(save_fig: bool = True):
         df_rt = filter_for_rt(trials, rt_var, exclude_nan_event_trials=True, clean_rt=True)
         var_sum = make_variability_summary(df_rt)
 
-        out_csv = C.RESULTSPATH / f"t_2RT_defs_variability_{rt_var}_{C.N_PERMUT_BEHAVIOR}permutation_2025.csv"
+        out_csv = C.RESULTSPATH / f"2RT_defs_variability_{rt_var}_{C.N_PERMUT_BEHAVIOR}permutation_2025.csv"
         perm_df = get_permut_results_table(
             df=var_sum,
             age_col=C.AGE2USE,                # e.g., 'age_years' or 'age_months'; utils will map to 'age_years'

@@ -10,7 +10,7 @@ import config as C
 from scripts.utils.plot_utils import plot_permut_test
 from scripts.utils.io import read_table, get_suffix
 from scripts.utils.stats_utils import run_permutation_test  
-from scripts.utils.io import read_table, 
+from scripts.utils.io import read_table
 import logging
 
 
@@ -166,7 +166,14 @@ def main(mean_subtraction=False, plot_permt_result=True, log_transform=False):
 
 
 if __name__ == "__main__":
+
     from scripts.utils.io import setup_logging
-    setup_logging()
-    main(mean_subtraction=True, plot_permt_result=False, log_transform=True)
+    setup_logging() 
+
+    for mean_sub in (True, False):
+        logging.info(f"=== Run with mean_subtraction={mean_sub} ===")
+        main(mean_subtraction=mean_sub,
+             plot_permt_result=False,
+             log_transform=True)
+
 # %%

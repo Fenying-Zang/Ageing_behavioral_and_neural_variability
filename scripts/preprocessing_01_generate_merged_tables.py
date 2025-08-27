@@ -42,7 +42,7 @@ def main():
     n_mice = trials_table["mouse_name"].nunique() if "mouse_name" in trials_table.columns else "NA"
     n_trials = len(trials_table)
     log.info(f"New trials table saved: {outpath.resolve()}")
-    log.info(f"{n_mice} mice, {n_trials} trials")
+    # log.info(f"{n_mice} mice, {n_trials} trials")
 
     if err_list:
         log.warning(f"Encountered {len(err_list)} errors while fetching trials (showing up to 5):")

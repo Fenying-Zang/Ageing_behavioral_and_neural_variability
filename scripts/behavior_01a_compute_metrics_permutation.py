@@ -97,7 +97,7 @@ def fit_behavior(trials_table, trial_type=C.TRIAL_TYPE, clean_rt=True,
     data2fit = add_age_group(data2fit)
     
     # Fit psychometric parameters, together compute rt variability
-    fit_psy_paras = fit_psychometric_paras(data2fit, easy_trials=False, split_type=split_type)
+    fit_psy_paras = fit_psychometric_paras(data2fit, split_type=split_type)
     eid_unique = data2fit.drop_duplicates(subset='eid')
     
     # Merge with age info
@@ -117,9 +117,6 @@ def fit_behavior(trials_table, trial_type=C.TRIAL_TYPE, clean_rt=True,
 
 
 # === Wrapper for permutation test across multiple measures ===
-def run_permutation_for_measures(fit_data, measures_list, *, family_func, label,
-                                 shuffling, n_permut, random_state, n_jobs=6,
-                                 save=True, plot=True):
 def run_permutation_for_measures(fit_data, measures_list, *, family_func, label,
                                  shuffling, n_permut, random_state, n_jobs=6,
                                  save=True, plot=True):
@@ -206,40 +203,40 @@ def main():
     trials_table = load_trial_table(trials_table_file)
 
     if trials_table is not None:
-        split_type='prevresp'
-        
-        # Step 1: Fit psychometric parameters, compute rt parameters and add age info
-        fit_psy_paras_age_info = fit_behavior(
-            trials_table, trial_type='first400', clean_rt=True,
-            split_type=split_type, save_results=True
-        ) #TODO:
+        # split_type='prevresp'
+        for split_type in ['prevresp','block']:
+            # Step 1: Fit psychometric parameters, compute rt parameters and add age info
+            fit_psy_paras_age_info = fit_behavior(
+                trials_table, trial_type='first400', clean_rt=True,
+                split_type=split_type, save_results=True
+            ) #TODO:
 
-        # Step 2: Define measure groups
-        measures_list_psych = ['abs_bias', 'threshold', 'mean_lapse']
-        measures_list_rt = ['rt_median', 'rt_CV']
-        measures_list_shift = ['bias_shift', 'lapselow_shift', 'lapsehigh_shift']
+            # Step 2: Define measure groups
+            measures_list_psych = ['abs_bias', 'threshold', 'mean_lapse']
+            measures_list_rt = ['rt_median', 'rt_CV']
+            measures_list_shift = ['bias_shift', 'lapselow_shift', 'lapsehigh_shift']
 
-        # Step 3: Run permutation tests for each group
-        run_permutation_for_measures(
-            fit_psy_paras_age_info, measures_list_psych,
-            family_func=Gaussian(), label="psychometric",
-            shuffling="labels1_global", n_permut=C.N_PERMUT_BEHAVIOR,
-            random_state=C.RANDOM_STATE, n_jobs=6
-        )
+            # Step 3: Run permutation tests for each group
+            run_permutation_for_measures(
+                fit_psy_paras_age_info, measures_list_psych,
+                family_func=Gaussian(), label="psychometric",
+                shuffling="labels1_global", n_permut=C.N_PERMUT_BEHAVIOR,
+                random_state=C.RANDOM_STATE, n_jobs=6
+            )
 
-        run_permutation_for_measures(
-            fit_psy_paras_age_info, measures_list_rt,
-            family_func=Gaussian(), label="rt",
-            shuffling="labels1_global", n_permut=C.N_PERMUT_BEHAVIOR,
-            random_state=C.RANDOM_STATE, n_jobs=6
-        )
+            run_permutation_for_measures(
+                fit_psy_paras_age_info, measures_list_rt,
+                family_func=Gaussian(), label="rt",
+                shuffling="labels1_global", n_permut=C.N_PERMUT_BEHAVIOR,
+                random_state=C.RANDOM_STATE, n_jobs=6
+            )
 
-        run_permutation_for_measures(
-            fit_psy_paras_age_info, measures_list_shift,
-            family_func=Gaussian(), label=f"{split_type}_shift",
-            shuffling="labels1_global", n_permut=C.N_PERMUT_BEHAVIOR,
-            random_state=C.RANDOM_STATE, n_jobs=6
-        )
+            run_permutation_for_measures(
+                fit_psy_paras_age_info, measures_list_shift,
+                family_func=Gaussian(), label=f"{split_type}_shift",
+                shuffling="labels1_global", n_permut=C.N_PERMUT_BEHAVIOR,
+                random_state=C.RANDOM_STATE, n_jobs=6
+            )
 
 
 if __name__ == "__main__":

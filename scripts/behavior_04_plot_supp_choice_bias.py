@@ -147,7 +147,7 @@ def main(save_fig=SAVE_FIG):
     for split_type in ['block', 'prevresp']:
         df = load_fit_params(split_type)
 
-        out_csv = C.RESULTSPATH / f"t_{split_type}_shift_{C.AGE2USE}_{C.N_PERMUT_BEHAVIOR}permutation.csv"
+        out_csv = C.RESULTSPATH / f"{split_type}_shift_{C.AGE2USE}_{C.N_PERMUT_BEHAVIOR}permutation.csv"
         perm_df = get_permut_results_table(
             df=df,
             age_col=C.AGE2USE,

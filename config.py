@@ -13,7 +13,6 @@ PROJECT_ROOT = Path(__file__).resolve().parent
 DATAPATH = PROJECT_ROOT / 'data'
 FIGPATH   = PROJECT_ROOT / 'figures'
 RESULTSPATH = PROJECT_ROOT / 'results'  
-# RESULTSPATH = PROJECT_ROOT / 'results_test'  
 
 PALETTE = {'young': '#78c679', 'old': '#2c7fb8'}
 PALETTE5 = ["#bfb4ca", "#9285a3", "#756388", "#5b496e", "#4B3169"]
@@ -88,13 +87,13 @@ METRICS_WITH_MEANSUB = [
     ('ff_quench', 'mean'),
 ]
 
-N_PERMUT_BEHAVIOR = 10000
-# N_PERMUT_NEURAL_OMNIBUS = 100
-# N_PERMUT_NEURAL_REGIONAL = 100
-
 # N_PERMUT_BEHAVIOR = 10000
-N_PERMUT_NEURAL_OMNIBUS = 1000
-N_PERMUT_NEURAL_REGIONAL = 1000
+# N_PERMUT_NEURAL_OMNIBUS = 1000
+# N_PERMUT_NEURAL_REGIONAL = 1000
+
+N_PERMUT_BEHAVIOR = 100
+N_PERMUT_NEURAL_OMNIBUS = 100
+N_PERMUT_NEURAL_REGIONAL = 100
 
 
 # =====will delete later=====
@@ -185,7 +184,7 @@ def __getattr__(name: str):
     new = _DEPRECATED_ALIASES.get(name)
     if new:
         _warn.warn(
-            f"config.{name} 已弃用，请改用 config.{new}",
+            f"please use config.{new}",
             DeprecationWarning,
             stacklevel=2,
         )

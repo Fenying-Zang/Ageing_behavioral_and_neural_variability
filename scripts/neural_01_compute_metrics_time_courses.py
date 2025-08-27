@@ -659,8 +659,7 @@ processed_dir.mkdir(exist_ok=True)
 if __name__ == "__main__":
     
     save_results = True
-    mean_subtraction = False
-    clean_rt = True 
+    # clean_rt = True 
 
     # 1) Trials table
     trials_table = load_and_prepare_trials(C.TRIAL_TYPE, C.EVENT_LIST, C.CLEAN_RT, C.RT_VARIABLE_NAME)
@@ -675,17 +674,16 @@ if __name__ == "__main__":
     ba = AllenAtlas()
     br = BrainRegions()
     one = ONE()
-    no_iblsortor=[]# pids for which iblsort enforce_version had to be relaxed
-    pid_no_spikes=[] # pids with zero spikes in selected ROIs
+    no_iblsortor=[] # pids for which iblsort enforce_version had to be relaxed
+    pid_no_spikes=[]  # pids with zero spikes in selected ROIs
 
     list_ind = []
     all_pids_to_use = recordings_filtered['pid'].to_list()
 
     # 4) Main processing loop (idempotent via .done guards)
+    # for index, row in recordings_filtered[0:60].iterrows():
     for index, row in recordings_filtered.iterrows():
         pid = row['pid']
-        # if pid in ['57edc590-a53d-403c-9aab-d58ee51b6a24', 'daadb3f1-bef2-474e-a659-72922f3fcc5b', '61bb2bcd-37b4-4bcc-8f40-8681009a511a', 'ee2ce090-696a-40f5-8f29-7107339bf08e']:
-        #     continue
         
         print(f"PID {index+1}/{len(recordings_filtered)}: {pid}")
         print(pid)
