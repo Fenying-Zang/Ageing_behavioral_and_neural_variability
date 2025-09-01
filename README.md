@@ -11,17 +11,22 @@ Fenying Zang, Leiden University, 2025, f.zang@fsw.leidenuniv.nl
 
 This project builds on the [IBL unified environment](https://github.com/int-brain-lab/iblenv).
 
-### 1. Clone and editable install
+### 1. Clone and install the dependencies
 
 ```bash
-cd ..
 git clone https://github.com/Fenying-Zang/ageing_behavioral_and_neural_variability.git
-cd ageing_behavioral_and_neural_variability
+cd Ageing_behavioral_and_neural_variability
 ```
+# Create and activate a virtual environment using Python 3.10 (optional but recommended)
+python -m venv venv
+source venv/bin/activate  # On Unix/macOS
+# venv\Scripts\activate   # On Windows
+
+# Install dependencies
 
 
 ```bash
-pip install -e .
+pip install -r requirements.txt
 
 ```
 
