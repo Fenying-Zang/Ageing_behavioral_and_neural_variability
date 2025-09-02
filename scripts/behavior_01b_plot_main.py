@@ -30,7 +30,7 @@ import seaborn as sns
 import pingouin as pg
 from scipy.stats import variation
 from one.api import ONE
-import brainbox as bb
+from scripts.utils.io import init_one
 from scripts.utils.plot_utils import figure_style
 import config as C
 from scripts.utils.plot_utils import (
@@ -48,7 +48,7 @@ import logging
 log = logging.getLogger(__name__)
 
 
-one = ONE()
+one = init_one()
 figure_style()
 
 # === Panel b: Age distribution ===

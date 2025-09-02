@@ -18,12 +18,12 @@ from scripts.utils.data_utils import add_age_group
 
 import config as C
 from scripts.utils.stats_utils import get_bf_results, get_permut_results
-from scripts.utils.io import read_table, save_figure
+from scripts.utils.io import init_one, read_table, save_figure
 import logging
 
 
 log = logging.getLogger(__name__)
-one = ONE()
+one = init_one()
 
 
 # Define the default styling used for figures

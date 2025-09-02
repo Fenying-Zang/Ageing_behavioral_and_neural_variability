@@ -15,6 +15,23 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from datetime import datetime
 import logging, sys
+from one.api import ONE
+import config as C
+
+
+def init_one():
+    """
+    Initialize ONE API depending on config.USE_OPENALYX flag.
+    """
+    if C.USE_OPENALYX:
+        return ONE(
+            mode="remote",
+            base_url="https://openalyx.internationalbrainlab.org",
+            password="international",
+            silent=True,
+        )
+    else:
+        return ONE(mode="remote", silent=True)
 
 
 def read_table(path, *, engine=None):

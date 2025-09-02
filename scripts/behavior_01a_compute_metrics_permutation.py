@@ -16,10 +16,6 @@ from statsmodels.formula.api import glm
 from statsmodels.genmod.families import Gaussian
 import logging
 
-# IBL libraries
-from one.api import ONE
-import brainbox as bb
-
 # Project utils
 import config as C
 from scripts.utils.plot_utils import figure_style

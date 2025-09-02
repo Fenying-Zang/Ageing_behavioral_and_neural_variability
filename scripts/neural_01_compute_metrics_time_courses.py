@@ -60,7 +60,7 @@ from scripts.utils.neuron_utils import cal_presence_ratio, combine_regions, smoo
 from scripts.utils.behavior_utils import clean_rts
 from glob import glob
 import logging
-from scripts.utils.io import read_table
+from scripts.utils.io import init_one, read_table
 
 log = logging.getLogger(__name__)
 
@@ -673,7 +673,8 @@ if __name__ == "__main__":
 
     ba = AllenAtlas()
     br = BrainRegions()
-    one = ONE()
+    one = init_one()
+
     no_iblsortor=[] # pids for which iblsort enforce_version had to be relaxed
     pid_no_spikes=[]  # pids with zero spikes in selected ROIs
 

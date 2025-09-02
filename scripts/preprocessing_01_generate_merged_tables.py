@@ -15,12 +15,13 @@ from one.api import ONE
 import config as C
 from scripts.utils.data_utils import load_filtered_recordings, add_age_group
 from scripts.utils.behavior_utils import create_trials_table
+from scripts.utils.io import init_one
 
 log = logging.getLogger(__name__)
 
 
 def main():
-    one = ONE()
+    one = init_one()
 
     # --- Load filtered sessions produced by the QC pipeline
     recordings_filtered = load_filtered_recordings(filename="BWM_LL_release_afterQC_df.csv")
