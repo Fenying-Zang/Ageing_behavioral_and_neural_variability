@@ -1,4 +1,6 @@
-# Extra dependencies required on top of iblenv
+#Dependencies of iblenv
+-r https://raw.githubusercontent.com/int-brain-lab/iblenv/refs/heads/master/requirements.txt
+
 
 # Compute Bayes Factors
 pingouin>=0.5.4
@@ -10,4 +12,3 @@ ibl-style
 rpy2>=3.5.0
 
 iblatlas==0.9.0   # otherwise we may encounter TypeError: plot_polygon() got an unexpected keyword argument 'show_cbar' issue
-

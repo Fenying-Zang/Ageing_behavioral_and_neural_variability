@@ -9,21 +9,24 @@ Fenying Zang, Leiden University, 2025, f.zang@fsw.leidenuniv.nl
 
 ## Installation & Setup
 
-This project builds on the [IBL unified environment](https://github.com/int-brain-lab/iblenv).  
-For **reproducibility**, all users should first install the IBL environment and then add the extra dependencies required by this project.
+This project builds on the [IBL unified environment](https://github.com/int-brain-lab/iblenv).
 
-### 1. Install IBL environment via conda
+### 1. Clone and install the dependencies
 
-See [IBL unified environment](https://github.com/int-brain-lab/iblenv) for full instruction.
 ```bash
-conda update -n base -c defaults conda
-conda create --name iblenv python=3.10 --yes
-conda activate iblenv
-git clone https://github.com/int-brain-lab/iblapps
-pip install --editable iblapps
-git clone https://github.com/int-brain-lab/iblenv
-cd iblenv
-pip install --requirement requirements.txt
+git clone https://github.com/Fenying-Zang/ageing_behavioral_and_neural_variability.git
+cd Ageing_behavioral_and_neural_variability
+```
+# Create and activate a virtual environment using Python 3.10 (optional but recommended)
+python -m venv venv
+source venv/bin/activate  # On Unix/macOS
+# venv\Scripts\activate   # On Windows
+
+# Install dependencies
+
+
+```bash
+pip install -r requirements.txt
 
 ```
 
@@ -45,22 +48,6 @@ Without Git LFS, these files will appear only as small pointer text files instea
 
 ```bash
 git lfs install
-```
-
-### 3. Clone this repository
-
-```bash
-cd ..
-git clone https://github.com/Fenying-Zang/ageing_behavioral_and_neural_variability.git
-cd ageing_behavioral_and_neural_variability
-```
-
-### 4. Install additional dependencies for this project
-After activating iblenv and cloning this repository, install the extra dependencies:
-
-```bash
-pip install -r requirements.txt
-
 ```
 
 ## Project Structure
