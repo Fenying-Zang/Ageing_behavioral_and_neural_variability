@@ -353,7 +353,7 @@ def load_and_prepare_trials( trial_type, event_list, clean_rt, rt_variable_name)
     return trials_table
 
 
-def load_sorting_and_clusters(row, one, no_iblsortor):
+def load_sorting_and_clusters(row, one):
     """Load spikes/clusters/channels for a PID with project‑specific logic.
 
 
@@ -371,6 +371,7 @@ def load_sorting_and_clusters(row, one, no_iblsortor):
     (spikes, clusters, channels, no_iblsortor)
     """
     pid = row['pid']
+    no_iblsortor_flag = False
     if row['project'] == 'brainwidemap':
         sl = SpikeSortingLoader(one=one, pid=pid)
         spikes, clusters, channels = sl.load_spike_sorting(revision='2024-05-06', good_units=True)
@@ -382,10 +383,10 @@ def load_sorting_and_clusters(row, one, no_iblsortor):
             spikes, clusters, channels = sl.load_spike_sorting(enforce_version=True)
         except AssertionError:
             spikes, clusters, channels = sl.load_spike_sorting(enforce_version=False)
-            no_iblsortor.append(pid)
+            no_iblsortor_flag = True
         clusters = sl.merge_clusters(spikes, clusters, channels)
 
-    return spikes, clusters, channels, no_iblsortor
+    return spikes, clusters, channels, no_iblsortor_flag
 
 
 def compute_cluster_metrics(spikes, clusters, trials, br, hist_win=10):
@@ -490,7 +491,7 @@ def compute_neural_yield(clusters, channels, ROIs, firing_rate_threshold, presen
     return yield_table, clusters_ids, cluster_idx
 
 
-def filter_spikes_by_cluster(spikes, clusters_ids, pid, pid_no_spikes):
+def filter_spikes_by_cluster(spikes, clusters_ids, pid):
     """Filter spikes to selected cluster ids.
 
 
@@ -499,14 +500,13 @@ def filter_spikes_by_cluster(spikes, clusters_ids, pid, pid_no_spikes):
     (spike_idx, has_valid_spikes, pid_no_spikes)
     spike_idx : boolean mask over `spikes['clusters']`
     has_valid_spikes : False if no spikes survived filtering
-    pid_no_spikes : updated list of PIDs with zero spikes in ROIs
     """
+    pid_no_spikes_flag = False
     spike_idx = np.isin(spikes['clusters'], clusters_ids)
     if np.sum(spike_idx) == 0:
         print(f"{pid} — No spikes in selected C.ROIS.")
-        pid_no_spikes.append(pid)
-        return spike_idx, False, pid_no_spikes
-    return spike_idx, True, pid_no_spikes
+        return spike_idx, False
+    return spike_idx, True
 
 
 def compute_fano_factors(spikes, spike_idx, clusters_ids, trials, event, event_epoch, bin_size, 
@@ -656,6 +656,102 @@ processed_dir = C.DATAPATH / "processed_pids"
 processed_dir.mkdir(exist_ok=True)
 
 
+# Per pid processing
+def process_pid(index, row):
+    """Process a single PID (probe insertion) to compute neural metrics.
+
+    Loads spike sorting data, computes cluster metrics and neural yield,
+    filters spikes to good units, and computes Fano factors and firing rates.
+    
+    Skips if  .done file already exists for the pid.
+
+    Parameters
+    ----------
+    index : int
+        Index of the PID in the recordings table
+    row : pd.Series
+        Row from recordings table containing PID
+
+    Returns
+    -------
+    dict
+        Status flags for the processing:
+        - pid : str, probe ID that was processed
+        - index : int, index in recordings table 
+        - no_iblsortor : bool | None, True if iblsort version check failed , None if done file exists or an error occured
+        - has_valid_spikes : bool | None, False if no spikes found in ROIs, None if done file exists or an error occured
+    """
+    pid = row['pid']
+    print(f"Processing pid  = {pid}")
+
+    return_flags = {'pid':pid, 'index':index, 'no_iblsortor':None, 'has_valid_spikes':None}
+
+    # Idempotency guard
+    done_file = processed_dir / f"{pid}.done"
+    if done_file.exists():
+        print(f"Skipping already processed pid: {pid}")
+        return return_flags
+
+    try:
+        eid, pname = one.pid2eid(pid)
+        eid = str(eid)
+        # Session‑specific trials & subject info
+        trials, subject, sex, age_at_recording, sess_date = extract_mouse_info(trials_table, eid)
+        # Load spikes/clusters/channels (project‑aware)
+        spikes, clusters, channels, no_iblsortor_flag = load_sorting_and_clusters(row, one)
+        return_flags['no_iblsortor'] = no_iblsortor_flag
+
+        event = map_event()
+
+        # Compute cluster metrics in the analysis window
+        clusters, spike_times_btw, spike_clusters = compute_cluster_metrics(spikes, clusters, trials, br)
+
+        # Select good units and summarize yield
+        yield_table, clusters_ids, cluster_idx = compute_neural_yield(
+                            clusters, channels, C.ROIS, C.FIRING_RATE_THRESHOLD,
+                            C.PRESENCE_RATIO_THRESHOLD, pid, eid, subject, age_at_recording, br
+                        )
+        
+        # Filter spikes to the selected units
+        spike_idx, has_valid_spikes = filter_spikes_by_cluster(spikes, clusters_ids, pid)
+        return_flags['has_valid_spikes'] = has_valid_spikes
+        if not has_valid_spikes:
+            return return_flags
+
+        # Compute FF/FR (condition‑wise + residual) for this pid
+        df_this, df_conditions_this = compute_fano_factors(
+            spikes, spike_idx, clusters_ids, trials, event, C.EVENT_EPOCH, C.BIN_SIZE,
+            eid, pid, age_at_recording, sex, subject, sess_date, C.TRIAL_TYPE,
+            clusters, cluster_idx
+        )
+        # df_all.extend(df_this)
+        # df_all_conditions.extend(df_conditions_this)
+
+        # Persist per‑pid intermediates (idempotent merges later)
+        df_pid = pd.concat(df_this, ignore_index=True)
+        df_cond_pid = pd.concat(df_conditions_this, ignore_index=True)
+
+        df_pid.to_parquet(processed_dir / f"{pid}_ff.parquet", engine='pyarrow', compression='snappy')
+        df_cond_pid.to_parquet(processed_dir / f"{pid}_ff_cond.parquet", engine='pyarrow', compression='snappy')
+        yield_table.to_parquet(processed_dir / f"{pid}_yield.parquet", engine='pyarrow', compression='snappy')
+
+        # Mark completion for resume‑safety
+        done_file.touch()
+
+        return return_flags
+
+    except Exception as err:
+        # Log and continue with the next pid (robust batch behavior)
+        print(f"Error on pid {pid} (index {index}): {err}")
+        traceback.print_exc()
+
+        logging.error(f"pid {pid} (index {index}) — {err}")
+        logging.error(traceback.format_exc())
+
+
+
+
+
 if __name__ == "__main__":
     
     save_results = True
@@ -678,79 +774,22 @@ if __name__ == "__main__":
     no_iblsortor=[] # pids for which iblsort enforce_version had to be relaxed
     pid_no_spikes=[]  # pids with zero spikes in selected ROIs
 
-    list_ind = []
     all_pids_to_use = recordings_filtered['pid'].to_list()
 
     # 4) Main processing loop (idempotent via .done guards)
     # for index, row in recordings_filtered[0:60].iterrows():
-    for index, row in recordings_filtered.iterrows():
-        pid = row['pid']
-        
-        print(f"PID {index+1}/{len(recordings_filtered)}: {pid}")
-        print(pid)
+    from joblib import Parallel, delayed
+    from tqdm import tqdm
+    result_flags  = Parallel(n_jobs=-1, verbose=10)(
+        delayed(process_pid)(index, row) 
+        for index, row in tqdm(recordings_filtered.iterrows())
+    )
+    
+    result_flags_df = pd.DataFrame(result_flags)
 
-        # Idempotency guard
-        done_file = processed_dir / f"{pid}.done"
-        if done_file.exists():
-            print(f"Skipping already processed pid: {pid}")
-            continue
+    result_flags_df.to_parquet(str(processed_dir) + '/result_flags.parquet')
 
-        print(f'processing {index + 1}/{len(recordings_filtered)}')
 
-        try:
-            list_ind.append(index)
-            eid, pname = one.pid2eid(pid)
-            eid = str(eid)
-            # Session‑specific trials & subject info
-            trials, subject, sex, age_at_recording, sess_date = extract_mouse_info(trials_table, eid)
-            # Load spikes/clusters/channels (project‑aware)
-            spikes, clusters, channels, no_iblsortor = load_sorting_and_clusters(row, one, no_iblsortor)
-
-            event = map_event()
-
-            # Compute cluster metrics in the analysis window
-            clusters, spike_times_btw, spike_clusters = compute_cluster_metrics(spikes, clusters, trials, br)
-
-            # Select good units and summarize yield
-            yield_table, clusters_ids, cluster_idx = compute_neural_yield(
-                                clusters, channels, C.ROIS, C.FIRING_RATE_THRESHOLD,
-                                C.PRESENCE_RATIO_THRESHOLD, pid, eid, subject, age_at_recording, br
-                            )
-            
-            # Filter spikes to the selected units
-            spike_idx, has_valid_spikes, pid_no_spikes = filter_spikes_by_cluster(spikes, clusters_ids, pid, pid_no_spikes)
-            if not has_valid_spikes:
-                continue
-
-            # Compute FF/FR (condition‑wise + residual) for this pid
-            df_this, df_conditions_this = compute_fano_factors(
-                spikes, spike_idx, clusters_ids, trials, event, C.EVENT_EPOCH, C.BIN_SIZE,
-                eid, pid, age_at_recording, sex, subject, sess_date, C.TRIAL_TYPE,
-                clusters, cluster_idx
-            )
-            # df_all.extend(df_this)
-            # df_all_conditions.extend(df_conditions_this)
-
-            # Persist per‑pid intermediates (idempotent merges later)
-            df_pid = pd.concat(df_this, ignore_index=True)
-            df_cond_pid = pd.concat(df_conditions_this, ignore_index=True)
-
-            df_pid.to_parquet(processed_dir / f"{pid}_ff.parquet", engine='pyarrow', compression='snappy')
-            df_cond_pid.to_parquet(processed_dir / f"{pid}_ff_cond.parquet", engine='pyarrow', compression='snappy')
-            yield_table.to_parquet(processed_dir / f"{pid}_yield.parquet", engine='pyarrow', compression='snappy')
-
-            # Mark completion for resume‑safety
-            done_file.touch()
-
-        except Exception as err:
-            # Log and continue with the next pid (robust batch behavior)
-            print(f"Error on pid {pid} (index {index}): {err}")
-            traceback.print_exc()
-
-            logging.error(f"pid {pid} (index {index}) — {err}")
-            logging.error(traceback.format_exc())
-
-            continue
 
     # all pids expected
     expected_pids = set(recordings_filtered['pid'])

@@ -21,13 +21,23 @@ This project builds on the [IBL unified environment](https://github.com/int-brai
 ```bash
 git clone https://github.com/Fenying-Zang/ageing_behavioral_and_neural_variability.git
 cd Ageing_behavioral_and_neural_variability
+<<<<<<< HEAD
+```
+=======
 
+>>>>>>> origin/main
 # Create and activate a virtual environment using Python 3.10 (optional but recommended)
 python -m venv venv
 source venv/bin/activate  # On Unix/macOS
 # venv\Scripts\activate   # On Windows
 
 # Install dependencies
+<<<<<<< HEAD
+
+
+```bash
+=======
+>>>>>>> origin/main
 pip install -r requirements.txt
 
 ```
