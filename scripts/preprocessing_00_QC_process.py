@@ -14,7 +14,7 @@ from iblatlas.regions import BrainRegions
 from scripts.utils.query import bwm_query, lifespan_query
 from scripts.utils.neuron_utils import combine_regions
 from scripts.utils.behavior_utils import filter_trials
-from scripts.utils.io import read_table, setup_logging
+from scripts.utils.io import init_one, read_table
 import logging
 log = logging.getLogger(__name__)
 
@@ -147,7 +147,7 @@ def main():
     from scripts.utils.io import setup_logging
     setup_logging()
 
-    one = ONE()
+    one = init_one()
 
     # Query metadata from release table (BWM) and database (Lifespan) (session/probe tables)
     bwm_df = bwm_query(alignment_resolved=True, return_details=False)

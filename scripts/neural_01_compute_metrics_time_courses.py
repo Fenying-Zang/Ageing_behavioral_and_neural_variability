@@ -60,7 +60,7 @@ from scripts.utils.neuron_utils import cal_presence_ratio, combine_regions, smoo
 from scripts.utils.behavior_utils import clean_rts
 from glob import glob
 import logging
-from scripts.utils.io import read_table
+from scripts.utils.io import init_one, read_table
 
 log = logging.getLogger(__name__)
 
@@ -769,7 +769,8 @@ if __name__ == "__main__":
 
     ba = AllenAtlas()
     br = BrainRegions()
-    one = ONE()
+    one = init_one()
+
     no_iblsortor=[] # pids for which iblsort enforce_version had to be relaxed
     pid_no_spikes=[]  # pids with zero spikes in selected ROIs
 
@@ -781,7 +782,7 @@ if __name__ == "__main__":
     from tqdm import tqdm
     result_flags  = Parallel(n_jobs=-1, verbose=10)(
         delayed(process_pid)(index, row) 
-        for index, row in tqdm(recordings_filtered[:30].iterrows())
+        for index, row in tqdm(recordings_filtered.iterrows())
     )
     
     result_flags_df = pd.DataFrame(result_flags)

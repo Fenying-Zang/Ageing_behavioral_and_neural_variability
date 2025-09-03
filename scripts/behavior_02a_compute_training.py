@@ -15,9 +15,10 @@ import pandas as pd
 import numpy as np
 import os
 import config as C
-from scripts.utils.io import read_table
+from scripts.utils.io import init_one, read_table
 
-one = ONE()
+one = init_one()
+
 def merge_full_training_trials(data=None):
 
     training_table_list=[]

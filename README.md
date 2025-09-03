@@ -6,6 +6,11 @@ This repository contains the code and data used to analyze **age-related changes
 Fenying Zang, Leiden University, 2025, f.zang@fsw.leidenuniv.nl
 
 ---
+## Data
+
+- Intermediate files needed for plotting are included in data/ and results/ (via Git LFS, see below).
+- Instructions for accessing the public data, along with an online browser, are available at https://docs.internationalbrainlab.org/notebooks_external/data_release_brainwidemap.html and https://www.internationalbrainlab.com/data.
+- The release of the newly recorded data is underway, and updates on access will be provided once finalized.
 
 ## Installation & Setup
 
@@ -16,16 +21,23 @@ This project builds on the [IBL unified environment](https://github.com/int-brai
 ```bash
 git clone https://github.com/Fenying-Zang/ageing_behavioral_and_neural_variability.git
 cd Ageing_behavioral_and_neural_variability
+<<<<<<< HEAD
 ```
+=======
+
+>>>>>>> origin/main
 # Create and activate a virtual environment using Python 3.10 (optional but recommended)
 python -m venv venv
 source venv/bin/activate  # On Unix/macOS
 # venv\Scripts\activate   # On Windows
 
 # Install dependencies
+<<<<<<< HEAD
 
 
 ```bash
+=======
+>>>>>>> origin/main
 pip install -r requirements.txt
 
 ```
@@ -90,15 +102,11 @@ python run_all_with_R.py
 python run_all_without_R.py
 ```
 
-## Data
-
-- Intermediate files needed for plotting are included in data/ and results/ (via Git LFS).
-- To access the raw IBL dataset, please refer to: https://int-brain-lab.github.io/ONE/
-
 ## License
 
 This project is licensed under the MIT License. See `LICENSE` for details.
 
 ## Acknowledgements
 
-This analysis builds upon the infrastructure, codebase, and datasets provided by [the International Brain Laboratory](https://www.internationalbrainlab.com/). We gratefully acknowledge their efforts.
+This work builds on the infrastructure, codebase, and datasets shared by the [International Brain Laboratory](https://www.internationalbrainlab.com/). We’re grateful for their open efforts.  
+Many thanks to Olivier Winter and Pranav Rai for reviewing the code and suggesting helpful improvements.
