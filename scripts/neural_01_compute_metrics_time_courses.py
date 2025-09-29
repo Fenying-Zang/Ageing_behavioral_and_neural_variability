@@ -60,9 +60,39 @@ from scripts.utils.neuron_utils import cal_presence_ratio, combine_regions, smoo
 from scripts.utils.behavior_utils import clean_rts
 from glob import glob
 import logging
+import math
 from scripts.utils.io import init_one, read_table
+import json, shutil
+
 
 log = logging.getLogger(__name__)
+
+# --- safety helpers ---
+
+def purge_alyx_cache(one):
+    """Clean ONE REST cache."""
+    base = Path(getattr(one, "cache_dir", Path.home() / ".one"))
+    for sub in ("cache", "", "alyx"):   # 3 ：…/cache、…/、…/alyx
+        p = (base / sub) if sub else base
+        try:
+            shutil.rmtree(p, ignore_errors=True)
+        except Exception:
+            pass
+
+
+def safe_ff(var_arr, mean_arr, min_mean=1e-6):
+    """
+    Compute FF = var / mean with safety:
+    - for mean <= min_mean or non-finite values -> NaN
+    - no RuntimeWarning; stable broadcasting
+    """
+    var_  = np.asanyarray(var_arr, dtype=float)
+    mean_ = np.asanyarray(mean_arr, dtype=float)
+    out = np.full(np.broadcast(var_, mean_).shape, np.nan, dtype=float)
+    valid = np.isfinite(var_) & np.isfinite(mean_) & (mean_ > min_mean)
+    np.divide(var_, mean_, out=out, where=valid)
+    return out
+
 
 def clean_rt_table(trials_table, rt_variable):
     """Add cleaned rt to a trials table.
@@ -372,21 +402,28 @@ def load_sorting_and_clusters(row, one):
     """
     pid = row['pid']
     no_iblsortor_flag = False
-    if row['project'] == 'brainwidemap':
-        sl = SpikeSortingLoader(one=one, pid=pid)
-        spikes, clusters, channels = sl.load_spike_sorting(revision='2024-05-06', good_units=True)
-        clusters = SpikeSortingLoader.merge_clusters(spikes, clusters, channels, compute_metrics=False)
 
-    elif row['project'] == 'learninglifespan':
-        sl = SpikeSortingLoader(pid=pid, one=one, spike_sorter='iblsort')
-        try:
-            spikes, clusters, channels = sl.load_spike_sorting(enforce_version=True)
-        except AssertionError:
-            spikes, clusters, channels = sl.load_spike_sorting(enforce_version=False)
-            no_iblsortor_flag = True
-        clusters = sl.merge_clusters(spikes, clusters, channels)
+    def _do_load():
+        if row['project'] == 'brainwidemap':
+            sl = SpikeSortingLoader(one=one, pid=pid)
+            spikes, clusters, channels = sl.load_spike_sorting(revision='2024-05-06', good_units=True)
+            clusters = SpikeSortingLoader.merge_clusters(spikes, clusters, channels, compute_metrics=False)
+        elif row['project'] == 'learninglifespan':
+            sl = SpikeSortingLoader(pid=pid, one=one, spike_sorter='iblsort')
+            try:
+                spikes, clusters, channels = sl.load_spike_sorting(enforce_version=True)
+            except AssertionError:
+                spikes, clusters, channels = sl.load_spike_sorting(enforce_version=False)
+                nonlocal no_iblsortor_flag
+                no_iblsortor_flag = True
+            clusters = sl.merge_clusters(spikes, clusters, channels)
+        return spikes, clusters, channels, no_iblsortor_flag
 
-    return spikes, clusters, channels, no_iblsortor_flag
+    try:
+        return _do_load()
+    except json.JSONDecodeError:
+        purge_alyx_cache(one)   # 🔹 就这一行
+        return _do_load()
 
 
 def compute_cluster_metrics(spikes, clusters, trials, br, hist_win=10):
@@ -548,6 +585,9 @@ def compute_fano_factors(spikes, spike_idx, clusters_ids, trials, event, event_e
         trials[event].values, align_epoch=event_epoch, bin_size=bin_size
     )
 
+    if bins_full.size == 0 or bins_full.shape[0] == 0:
+        return [], []
+    
     # --- 2) Condition‑wise metrics
     for signed_contrast, group in trials.groupby('signed_contrast'):
         bins, t = smoothing_sliding(
@@ -562,12 +602,16 @@ def compute_fano_factors(spikes, spike_idx, clusters_ids, trials, event, event_e
         fr_mean_across_trials = np.mean(bins/bin_size, axis=0)
         fr_normalized_mean_across_trials = np.mean(fr_normalized, axis=0)
         # FF per unit×time across trials
-        with np.errstate(divide='ignore', invalid='ignore'):
-            ff = np.nanvar(bins, axis=0) / np.nanmean(bins, axis=0)
+        # with np.errstate(divide='ignore', invalid='ignore'):
+        #     ff = np.nanvar(bins, axis=0) / np.nanmean(bins, axis=0)
         
         ff_var = np.nanvar(bins, axis=0)
         ff_mean = np.nanmean(bins, axis=0)
-        ff_normed = np.nanvar(sc_normalized, axis=0) / np.nanmean(sc_normalized, axis=0)
+        ff = safe_ff(ff_var, ff_mean)
+
+        # ff_normed = np.nanvar(sc_normalized, axis=0) / np.nanmean(sc_normalized, axis=0)
+        ff_normed = safe_ff(np.nanvar(sc_normalized, axis=0),
+                    np.nanmean(sc_normalized, axis=0))
         # Accumulate for residual FF
         sc_mean_across_trials = np.mean(bins, axis=0)
         if weighted_mean_sum is None:
@@ -595,7 +639,9 @@ def compute_fano_factors(spikes, spike_idx, clusters_ids, trials, event, event_e
     # --- 3) Residual FF pooling across conditions
     concatenated_bins = np.concatenate(all_sc_adjusted_bins, axis=0)
     weighted_mean_across_conditions = weighted_mean_sum / total_weight
-    ff_residuals = np.nanvar(concatenated_bins, axis=0) / weighted_mean_across_conditions
+    # ff_residuals = np.nanvar(concatenated_bins, axis=0) / weighted_mean_across_conditions
+    ff_residuals = safe_ff(np.nanvar(concatenated_bins, axis=0),
+                       weighted_mean_across_conditions)
     fr_residuals = weighted_mean_across_conditions / bin_size
     ff_var_residuals = np.nanvar(concatenated_bins, axis=0)
     ff_mean_residuals = weighted_mean_across_conditions
@@ -604,8 +650,12 @@ def compute_fano_factors(spikes, spike_idx, clusters_ids, trials, event, event_e
     # --- 4) Full‑epoch normalized FF/FR for reference plots
     sc_normalized_full = normalize_epoch_extremum(bins_full, bins_full)
     fr_normalized_full_mean_across_trials = np.mean(sc_normalized_full, axis=0)
-    ff_full_normed = np.nanvar(sc_normalized_full, axis=0) / np.nanmean(sc_normalized_full, axis=0)
-    ff_full_original = np.nanvar(bins_full, axis=0) / np.nanmean(bins_full, axis=0)
+    # ff_full_normed = np.nanvar(sc_normalized_full, axis=0) / np.nanmean(sc_normalized_full, axis=0)
+    # ff_full_original = np.nanvar(bins_full, axis=0) / np.nanmean(bins_full, axis=0)
+    ff_full_normed   = safe_ff(np.nanvar(sc_normalized_full, axis=0),
+                            np.nanmean(sc_normalized_full, axis=0))
+    ff_full_original = safe_ff(np.nanvar(bins_full, axis=0),
+                            np.nanmean(bins_full, axis=0))
     fr_full_original = np.mean(bins_full / bin_size, axis=0)
 
     # Build residual/full rows per unit
@@ -656,8 +706,7 @@ processed_dir = C.DATAPATH / "processed_pids"
 processed_dir.mkdir(exist_ok=True)
 
 
-# Per pid processing
-def process_pid(index, row):
+def process_pid(index, row): # Per pid processing
     """Process a single PID (probe insertion) to compute neural metrics.
 
     Loads spike sorting data, computes cluster metrics and neural yield,
@@ -749,9 +798,6 @@ def process_pid(index, row):
         logging.error(traceback.format_exc())
 
 
-
-
-
 if __name__ == "__main__":
     
     save_results = True
@@ -780,16 +826,26 @@ if __name__ == "__main__":
     # for index, row in recordings_filtered[0:60].iterrows():
     from joblib import Parallel, delayed
     from tqdm import tqdm
-    result_flags  = Parallel(n_jobs=-1, verbose=10)(
-        delayed(process_pid)(index, row) 
-        for index, row in tqdm(recordings_filtered.iterrows())
+    # result_flags  = Parallel(n_jobs=-1, verbose=10)(
+    #     delayed(process_pid)(index, row) 
+    #     for index, row in tqdm(recordings_filtered.iterrows())
+    # )
+    n_jobs = max(1, min(8, (os.cpu_count() or 8) - 2))
+    result_flags = Parallel(
+        n_jobs=n_jobs,
+        backend="loky",
+        prefer="processes",
+        batch_size=1,
+        pre_dispatch="2*n_jobs",
+        verbose=10
+    )(
+        delayed(process_pid)(index, row)
+        for index, row in recordings_filtered.iterrows()
     )
     
+    result_flags = [rf for rf in result_flags if isinstance(rf, dict)]
     result_flags_df = pd.DataFrame(result_flags)
-
     result_flags_df.to_parquet(str(processed_dir) + '/result_flags.parquet')
-
-
 
     # all pids expected
     expected_pids = set(recordings_filtered['pid'])
