@@ -16,6 +16,9 @@ DATAPATH = PROJECT_ROOT / 'data'
 FIGPATH   = PROJECT_ROOT / 'figures'
 RESULTSPATH = PROJECT_ROOT / 'results'  
 
+REV_TRIALS = "2025-03-03"
+REV_TRAINING = "2025-03-03"
+
 PALETTE = {'young': '#78c679', 'old': '#2c7fb8'}
 PALETTE5 = ["#bfb4ca", "#9285a3", "#756388", "#5b496e", "#4B3169"]
 PALETTE5_2GROUPS = {

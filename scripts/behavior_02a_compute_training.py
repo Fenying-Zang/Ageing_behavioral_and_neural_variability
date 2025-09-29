@@ -24,9 +24,16 @@ def merge_full_training_trials(data=None):
     training_table_list=[]
     for index, row in data.iterrows():
         subject = row['mouse_name']
-        trials_table = one.load_aggregate('subjects', subject, '_ibl_subjectTrials.table')
+        try:
+            trials_table = one.load_aggregate('subjects', subject, '_ibl_subjectTrials.table',revision=C.REV_TRIALS)
+        except Exception:
+            trials_table = one.load_aggregate('subjects', subject, '_ibl_subjectTrials.table')
+
         # Load training status and join to trials table
-        training_table = one.load_aggregate('subjects', subject, '_ibl_subjectTraining.table')
+        try:
+            training_table = one.load_aggregate('subjects', subject, '_ibl_subjectTraining.table',revision=C.REV_TRAINING)
+        except Exception:
+            training_table = one.load_aggregate('subjects', subject, '_ibl_subjectTraining.table')
         trials_table = (trials_table   
                 .set_index('session')
                 .join(training_table.set_index('session'))
@@ -39,6 +46,7 @@ def merge_full_training_trials(data=None):
     all_subj_tt_df = pd.concat(training_table_list, ignore_index=True) 
     
     return all_subj_tt_df
+
 
 def compute_training_history(data_info_unique, all_subj_tt_df):
     list_perf_easy = []
@@ -136,7 +144,13 @@ def get_extra_trials(sess2add, earliest_date):
     list_sess2add=[]
     for sess_eid in sess2add:
         try:
-            sess_loader = SessionLoader(eid=sess_eid, one=one)
+            try:
+                sess_loader = SessionLoader(eid=sess_eid, one=one, revision=C.REV_TRIALS)
+            except Exception as inner_err:
+                print(f"{sess_eid} failed with revision {C.REV_TRIALS}: {inner_err}")
+                sess_loader = SessionLoader(eid=sess_eid, one=one)
+                print(f"[FALLBACK] {sess_eid}: preferred {C.REV_TRIALS} failed: {inner_err}; using default")
+
             sess_loader.load_trials()
             sess_trials = sess_loader.trials
             sess_n_trials = sess_trials.shape[0]
@@ -149,6 +163,7 @@ def get_extra_trials(sess2add, earliest_date):
             print(sess_eid, err)
     df_sess = pd.concat(list_sess2add, ignore_index=True)
     return df_sess
+
 
 def main(save_results=True):
 
@@ -179,3 +194,5 @@ def main(save_results=True):
 
 if __name__ == "__main__":
     main(save_results=True)
+
+# %%
