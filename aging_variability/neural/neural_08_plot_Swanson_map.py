@@ -11,10 +11,10 @@ import matplotlib.pyplot as plt
 from matplotlib.colors import LinearSegmentedColormap
 from iblatlas.plots import plot_swanson_vector
 from iblatlas.atlas import BrainRegions
-from scripts.utils.plot_utils import figure_style
-from scripts.utils.io import read_table
-import config as C
-from scripts.utils.io import read_table, save_figure
+from aging_variability.utils.plot_utils import figure_style
+from aging_variability.utils.io import read_table
+import aging_variability.config as C
+from aging_variability.utils.io import read_table, save_figure
 import logging
 
 log = logging.getLogger(__name__)
@@ -106,7 +106,7 @@ def main(mean_subtraction=False):
         # print('range of values:', stats_df['observed_val'].min(), stats_df['observed_val'].max(), stats_df['observed_val'].mean())
 
 if __name__ == "__main__":
-    from scripts.utils.io import setup_logging
+    from aging_variability.utils.io import setup_logging
     setup_logging()
 
     main(mean_subtraction=True)

@@ -6,11 +6,11 @@ neural yield; 7 metrics
 import pandas as pd
 import numpy as np
 from statsmodels.genmod.families import Gaussian
-import config as C
-from scripts.utils.plot_utils import plot_permut_test
-from scripts.utils.io import read_table, get_suffix
-from scripts.utils.stats_utils import run_permutation_test  
-from scripts.utils.io import read_table
+import aging_variability.config as C
+from aging_variability.utils.plot_utils import plot_permut_test
+from aging_variability.utils.io import read_table, get_suffix
+from aging_variability.utils.stats_utils import run_permutation_test  
+from aging_variability.utils.io import read_table
 import logging
 
 
@@ -167,7 +167,7 @@ def main(mean_subtraction=False, plot_permt_result=True, log_transform=False):
 
 if __name__ == "__main__":
 
-    from scripts.utils.io import setup_logging
+    from aging_variability.utils.io import setup_logging
     setup_logging() 
 
     for mean_sub in (True, False):

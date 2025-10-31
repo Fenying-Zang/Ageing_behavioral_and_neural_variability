@@ -29,14 +29,14 @@ import seaborn as sns
 from ibl_style.utils import MM_TO_INCH
 import figrid as fg
 
-import config as C
-from scripts.utils.io import read_table, save_figure, get_suffix
-from scripts.utils.plot_utils import figure_style, create_slice_org_axes, format_bf_annotation
-from scripts.utils.data_utils import add_age_group
+import aging_variability.config as C
+from aging_variability.utils.io import read_table, save_figure, get_suffix
+from aging_variability.utils.plot_utils import figure_style, create_slice_org_axes, format_bf_annotation
+from aging_variability.utils.data_utils import add_age_group
 
 from statsmodels.formula.api import glm
 from statsmodels.genmod.families import Gaussian
-from scripts.utils.io import read_table, save_figure
+from aging_variability.utils.io import read_table, save_figure
 import logging
 
 log = logging.getLogger(__name__)
@@ -449,7 +449,7 @@ def main(mean_subtraction=False):
 
 
 if __name__ == "__main__":
-    from scripts.utils.io import setup_logging
+    from aging_variability.utils.io import setup_logging
     setup_logging()
     
 

@@ -14,8 +14,8 @@ from brainbox.io.one import SessionLoader
 import pandas as pd
 import numpy as np
 import os
-import config as C
-from scripts.utils.io import init_one, read_table
+import aging_variability.config as C
+from aging_variability.utils.io import init_one, read_table
 
 one = init_one()
 
@@ -193,6 +193,7 @@ def main(save_results=True):
 
 
 if __name__ == "__main__":
+    #PR Why is there no setup_logging here?
     main(save_results=True)
 
 # %%

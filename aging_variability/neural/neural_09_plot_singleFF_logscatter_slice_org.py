@@ -4,16 +4,16 @@ plot singleFF (var vs mean) scatter plot
 Figure 4 S1. The relationship between spike count variance and spike count mean.
 
 """
-import config as C
+import aging_variability.config as C
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 from matplotlib.ticker import LogLocator
 import figrid as fg
 from ibl_style.utils import get_coords, MM_TO_INCH, double_column_fig
-from scripts.utils.plot_utils import figure_style
-from scripts.utils.io import read_table,save_figure
-from scripts.utils.io import read_table, save_figure, setup_logging
+from aging_variability.utils.plot_utils import figure_style
+from aging_variability.utils.io import read_table,save_figure
+from aging_variability.utils.io import read_table, save_figure, setup_logging
 import logging
 
 
@@ -142,7 +142,7 @@ def main():
 
 
 if __name__ == "__main__":
-    from scripts.utils.io import setup_logging
+    from aging_variability.utils.io import setup_logging
     setup_logging()
     
     main()

@@ -19,7 +19,7 @@ from dateutil import parser
 import numpy as np
 import pandas as pd
 from iblutil.numerical import ismember
-import config as C
+import aging_variability.config as C
 
 
 def bwm_query(one=None, alignment_resolved=True, return_details=False, freeze='2023_12_bwm_release'):

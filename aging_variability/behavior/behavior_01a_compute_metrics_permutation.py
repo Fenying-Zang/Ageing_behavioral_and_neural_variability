@@ -17,15 +17,15 @@ from statsmodels.genmod.families import Gaussian
 import logging
 
 # Project utils
-import config as C
-from scripts.utils.plot_utils import figure_style
-from scripts.utils.stats_utils import run_permutation_test
-from scripts.utils.behavior_utils import (
+import aging_variability.config as C
+from aging_variability.utils.plot_utils import figure_style
+from aging_variability.utils.stats_utils import run_permutation_test
+from aging_variability.utils.behavior_utils import (
     compute_choice_history,
     fit_psychometric_paras,
     filter_trials
 )
-from scripts.utils.data_utils import (
+from aging_variability.utils.data_utils import (
     interpret_bayes_factor,
     bf_gaussian_via_pearson,
     add_age_group
@@ -236,7 +236,7 @@ def main():
 
 
 if __name__ == "__main__":
-    from scripts.utils.io import setup_logging
+    from aging_variability.utils.io import setup_logging
 
     setup_logging()
     main()

@@ -30,18 +30,18 @@ import seaborn as sns
 import pingouin as pg
 from scipy.stats import variation
 from one.api import ONE
-from scripts.utils.io import init_one
-from scripts.utils.plot_utils import figure_style
-import config as C
-from scripts.utils.plot_utils import (
+from aging_variability.utils.io import init_one
+from aging_variability.utils.plot_utils import figure_style
+import aging_variability.config as C
+from aging_variability.utils.plot_utils import (
     plot_psychometric,
     plot_chronometric,
     format_bf_annotation
 )
-from scripts.utils.behavior_utils import compute_choice_history
-from scripts.utils.data_utils import add_age_group
-from scripts.utils.behavior_utils import filter_trials
-from scripts.utils.io import read_table, save_figure, setup_logging
+from aging_variability.utils.behavior_utils import compute_choice_history
+from aging_variability.utils.data_utils import add_age_group
+from aging_variability.utils.behavior_utils import filter_trials
+from aging_variability.utils.io import read_table, save_figure, setup_logging
 import matplotlib.ticker as mticker
 import logging
 
@@ -543,7 +543,7 @@ def main():
 
 
 if __name__ == "__main__":
-    from scripts.utils.io import setup_logging
+    from aging_variability.utils.io import setup_logging
     setup_logging()
     main()
 

@@ -6,10 +6,10 @@ import pandas as pd
 import numpy as np
 import os
 import platform
-from scripts.utils.data_utils import interpret_bayes_factor, add_age_group
-from scripts.utils.io import read_table, get_suffix
+from aging_variability.utils.data_utils import interpret_bayes_factor, add_age_group
+from aging_variability.utils.io import read_table, get_suffix
 
-import config as C
+import aging_variability.config as C
 from rpy2.robjects import Formula
 import rpy2.robjects as ro
 from rpy2.robjects.packages import importr
@@ -280,7 +280,7 @@ def main(mean_subtraction=False, log_transform=True):
 
 
 if __name__ == "__main__":
-    from scripts.utils.io import setup_logging
+    from aging_variability.utils.io import setup_logging
     setup_logging()
 
     for mean_sub in (True, False):
