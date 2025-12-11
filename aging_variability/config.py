@@ -2,17 +2,15 @@
 from pathlib import Path
 import sys
 
-PROJECT_ROOT = Path(__file__).resolve().parent
 
-#PR This can potentially mess up a lot of things implicity, but hopefull with me changing all the imports, thigns will work.
 # SCRIPTS_DIR = PROJECT_ROOT / "scripts"
 # if str(SCRIPTS_DIR) not in sys.path:
 #     sys.path.insert(0, str(SCRIPTS_DIR))
 
 # ---- ONE API setup ----
-USE_OPENALYX = False   # False = internal database, True = openalyx
+USE_OPENALYX = True   # False = internal database, True = openalyx
 
-PROJECT_ROOT = Path(__file__).resolve().parent
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
 DATAPATH = PROJECT_ROOT / 'data'
 FIGPATH   = PROJECT_ROOT / 'figures'
 RESULTSPATH = PROJECT_ROOT / 'results'  
@@ -93,13 +91,13 @@ METRICS_WITH_MEANSUB = [
     ('ff_quench', 'mean'),
 ]
 
-N_PERMUT_BEHAVIOR = 10000
-N_PERMUT_NEURAL_OMNIBUS = 1000
-N_PERMUT_NEURAL_REGIONAL = 1000
+# N_PERMUT_BEHAVIOR = 10000
+# N_PERMUT_NEURAL_OMNIBUS = 1000
+# N_PERMUT_NEURAL_REGIONAL = 1000
 
-# N_PERMUT_BEHAVIOR = 100
-# N_PERMUT_NEURAL_OMNIBUS = 100
-# N_PERMUT_NEURAL_REGIONAL = 100
+N_PERMUT_BEHAVIOR = 100
+N_PERMUT_NEURAL_OMNIBUS = 100
+N_PERMUT_NEURAL_REGIONAL = 100
 
 
 # =====will delete later=====

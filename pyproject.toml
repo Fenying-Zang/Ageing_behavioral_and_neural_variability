@@ -1,0 +1,35 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "aging-variability"
+version = "0.1.0"
+description = "Code for analyzing age-related changes in behavioral and neural variability in the IBL visual decision-making task"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "MIT"}
+authors = [
+    {name = "Fenying Zang", email = "f.zang@fsw.leidenuniv.nl"}
+]
+classifiers = [
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Topic :: Scientific/Engineering :: Bio-Informatics",
+]
+
+# Note: Dependencies are handled in setup.py to support the iblenv requirements URL.
+# The setup.py file reads requirements.txt and fetches iblenv requirements from the URL.
+# All dependencies (including iblenv) are installed when running: pip install -e .
+
+[project.optional-dependencies]
+lint = ["ruff>=0.7.3"]
+
+[tool.setuptools]
+# Automatically discover all packages and subpackages
+packages = {find = {}}
+
+[tool.setuptools.package-data]
+aging_variability = ["**/*.py"]
+
