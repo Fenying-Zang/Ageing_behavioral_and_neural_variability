@@ -6,15 +6,15 @@ Outputs:
 
 """
 # %% Imports
-import config as C
+import aging_variability.config as C
 import pandas as pd
 from one.api import ONE
 from iblatlas.regions import BrainRegions
 
-from scripts.utils.query import bwm_query, lifespan_query
-from scripts.utils.neuron_utils import combine_regions
-from scripts.utils.behavior_utils import filter_trials
-from scripts.utils.io import init_one, read_table
+from aging_variability.utils.query import bwm_query, lifespan_query
+from aging_variability.utils.neuron_utils import combine_regions
+from aging_variability.utils.behavior_utils import filter_trials
+from aging_variability.utils.io import init_one, read_table
 import logging
 log = logging.getLogger(__name__)
 
@@ -144,7 +144,7 @@ def filter_sessions_insertions(query_insertions, trials_df, clus_df, rt_range, m
 
 
 def main():
-    from scripts.utils.io import setup_logging
+    from aging_variability.utils.io import setup_logging
     setup_logging()
 
     one = init_one()

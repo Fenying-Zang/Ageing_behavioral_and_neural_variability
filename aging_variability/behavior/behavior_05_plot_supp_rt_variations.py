@@ -17,15 +17,15 @@ import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
 from statsmodels.genmod.families import Gaussian
-from scripts.utils.plot_utils import figure_style, format_bf_annotation
+from aging_variability.utils.plot_utils import figure_style, format_bf_annotation
 from ibl_style.utils import get_coords, MM_TO_INCH, double_column_fig
 import figrid as fg
 
-from scripts.utils.behavior_utils import filter_trials
-from scripts.utils.data_utils import bf_gaussian_via_pearson, interpret_bayes_factor
-import config as C 
-from scripts.utils.stats_utils import get_permut_results_table
-from scripts.utils.io import read_table, save_figure, setup_logging
+from aging_variability.utils.behavior_utils import filter_trials
+from aging_variability.utils.data_utils import bf_gaussian_via_pearson, interpret_bayes_factor
+import aging_variability.config as C 
+from aging_variability.utils.stats_utils import get_permut_results_table
+from aging_variability.utils.io import read_table, save_figure, setup_logging
 import logging
 
 log = logging.getLogger(__name__)
@@ -191,7 +191,7 @@ def main(save_fig: bool = True):
 
 
 if __name__ == "__main__":
-    from scripts.utils.io import setup_logging
+    from aging_variability.utils.io import setup_logging
     setup_logging()
 
     main(save_fig=True)

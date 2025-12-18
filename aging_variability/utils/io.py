@@ -16,7 +16,7 @@ import matplotlib.pyplot as plt
 from datetime import datetime
 import logging, sys
 from one.api import ONE
-import config as C
+import aging_variability.config as C
 
 
 def init_one():

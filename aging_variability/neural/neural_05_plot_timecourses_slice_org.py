@@ -10,7 +10,7 @@ FF time courses
 """
 #%%
 
-import config as C
+import aging_variability.config as C
 import pandas as pd
 import numpy as np
 import os
@@ -18,11 +18,10 @@ import matplotlib.pyplot as plt
 import figrid as fg
 import seaborn as sns
 from ibl_style.utils import MM_TO_INCH
-from scripts.utils.plot_utils import figure_style
-import config as C
-from scripts.utils.plot_utils import create_slice_org_axes, add_window_label
-from scripts.utils.io import read_table, get_suffix
-from scripts.utils.io import read_table, save_figure, setup_logging
+from aging_variability.utils.plot_utils import figure_style
+from aging_variability.utils.plot_utils import create_slice_org_axes, add_window_label
+from aging_variability.utils.io import read_table, get_suffix
+from aging_variability.utils.io import read_table, save_figure, setup_logging
 import logging
 
 
@@ -175,7 +174,7 @@ def main(mean_subtraction=True):
 
 
 if __name__ == "__main__":
-    from scripts.utils.io import setup_logging
+    from aging_variability.utils.io import setup_logging
     setup_logging()
 
     main(mean_subtraction=True)

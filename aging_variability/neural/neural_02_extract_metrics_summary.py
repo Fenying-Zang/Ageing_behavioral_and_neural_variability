@@ -31,8 +31,8 @@ Outputs
 import pandas as pd
 import numpy as np
 from sklearn.linear_model import LinearRegression
-import config as C
-from scripts.utils.io import read_table
+import aging_variability.config as C
+from aging_variability.utils.io import read_table
 import logging
 
 log = logging.getLogger(__name__)
@@ -197,6 +197,6 @@ def main():
 
 
 if __name__ == "__main__":
-    from scripts.utils.io import setup_logging
+    from aging_variability.utils.io import setup_logging
     setup_logging()
     main()

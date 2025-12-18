@@ -7,7 +7,7 @@ Figure 4 S4. Regional specificity in contrast modulation of the Fano Factor
 Figure 4 S5a Regional specificity in age-related differences in contrast modulation of the Fano Factor
 """
 #%%
-import config as C
+import aging_variability.config as C
 # import warnings
 # warnings.simplefilter("default", DeprecationWarning)
 
@@ -18,11 +18,11 @@ import figrid as fg
 import seaborn as sns
 
 from ibl_style.utils import MM_TO_INCH
-from scripts.utils.data_utils import add_age_group
-from scripts.utils.plot_utils import figure_style
-from scripts.utils.plot_utils import create_slice_org_axes, add_window_label
-from scripts.utils.io import read_table
-from scripts.utils.io import read_table, save_figure
+from aging_variability.utils.data_utils import add_age_group
+from aging_variability.utils.plot_utils import figure_style
+from aging_variability.utils.plot_utils import create_slice_org_axes, add_window_label
+from aging_variability.utils.io import read_table
+from aging_variability.utils.io import read_table, save_figure
 import logging
 
 log = logging.getLogger(__name__)
@@ -235,7 +235,7 @@ def main():
 
 
 if __name__ == "__main__":
-    from scripts.utils.io import setup_logging
+    from aging_variability.utils.io import setup_logging
     setup_logging()
 
     main()

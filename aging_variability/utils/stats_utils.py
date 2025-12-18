@@ -12,7 +12,7 @@ from tqdm import tqdm
 from statsmodels.formula.api import glm
 from pathlib import Path
 import pandas as pd
-import config as C
+import aging_variability.config as C
 
 
 def single_permutation(i, data, permuted_label, *, formula, family_func):
@@ -88,7 +88,7 @@ def run_permutation_test(data, age_labels, *, formula,
     """
     df = data.copy()
     try:
-        from scripts.utils.data_utils import shuffle_labels_perm
+        from aging_variability.utils.data_utils import shuffle_labels_perm
     except Exception:
         shuffle_labels_perm = None
     if shuffle_labels_perm is None:
@@ -119,7 +119,9 @@ def run_permutation_test(data, age_labels, *, formula,
 
     if plot and valid_null.size > 0 and np.isfinite(observed_val):
         try:
-            from scripts.develop.permutation_test import plot_permut_test
+            #PR I think this line is wrong, and this is just passing because of the try, except.
+            # from scripts.develop.permutation_test import plot_permut_test
+            from aging_variability.utils.plot_utils import plot_permut_test
             plot_permut_test(null_dist=valid_null, observed_val=observed_val, p=p_perm, mark_p=None)
         except Exception:
             pass
@@ -150,8 +152,8 @@ def get_bf_results(content, df, age2use, filename=None):
         Textual interpretation of BF strength.
     """
     import pandas as pd
-    import config as C
-    from scripts.utils.data_utils import bf_gaussian_via_pearson, interpret_bayes_factor
+    import aging_variability.config as C
+    from aging_variability.utils.data_utils import bf_gaussian_via_pearson, interpret_bayes_factor
 
     if filename is None:
         filename = C.RESULTSPATH / f"beyesfactor_{content}_trials.csv"  # keep current naming
@@ -197,7 +199,7 @@ def get_permut_results(content, age2use, df, filename=None):
         Observed coefficient for age.
     """
     import pandas as pd
-    import config as C
+    import aging_variability.config as C
     from statsmodels.genmod.families import Gaussian
 
     n_permut = C.N_PERMUT_BEHAVIOR

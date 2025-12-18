@@ -12,10 +12,10 @@ import logging
 from pathlib import Path
 import pandas as pd
 from one.api import ONE
-import config as C
-from scripts.utils.data_utils import load_filtered_recordings, add_age_group
-from scripts.utils.behavior_utils import create_trials_table
-from scripts.utils.io import init_one
+import aging_variability.config as C
+from aging_variability.utils.data_utils import load_filtered_recordings, add_age_group
+from aging_variability.utils.behavior_utils import create_trials_table
+from aging_variability.utils.io import init_one
 
 log = logging.getLogger(__name__)
 
@@ -52,7 +52,7 @@ def main():
 
 
 if __name__ == "__main__":
-    from scripts.utils.io import setup_logging
+    from aging_variability.utils.io import setup_logging
 
     setup_logging()
     main()

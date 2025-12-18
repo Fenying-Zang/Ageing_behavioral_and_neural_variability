@@ -18,18 +18,18 @@ import pandas as pd
 import seaborn as sns
 import figrid as fg
 from ibl_style.utils import get_coords, MM_TO_INCH, double_column_fig
-from scripts.utils.plot_utils import figure_style
+from aging_variability.utils.plot_utils import figure_style
 
 from statsmodels.genmod.families import Gaussian
-from scripts.utils.data_utils import (
+from aging_variability.utils.data_utils import (
     bf_gaussian_via_pearson, 
     interpret_bayes_factor,
     add_age_group)
-from scripts.utils.plot_utils import format_bf_annotation
-from scripts.utils.io import read_table, save_figure
-from scripts.utils.stats_utils import run_permutation_test
+from aging_variability.utils.plot_utils import format_bf_annotation
+from aging_variability.utils.io import read_table, save_figure
+from aging_variability.utils.stats_utils import run_permutation_test
 import logging
-import config as C
+import aging_variability.config as C
 
 log = logging.getLogger(__name__)
 # =====================
@@ -493,7 +493,7 @@ def main():
 
 
 if __name__ == "__main__":
-    from scripts.utils.io import setup_logging
+    from aging_variability.utils.io import setup_logging
     setup_logging()
     main()
 

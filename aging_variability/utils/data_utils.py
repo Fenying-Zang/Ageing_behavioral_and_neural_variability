@@ -18,7 +18,7 @@ from joblib import Parallel, delayed
 import os
 import pingouin as pg
 import math
-import config as C
+import aging_variability.config as C
 
 
 def load_filtered_recordings(datapath=C.DATAPATH, filename = 'BWM_LL_release_afterQC_df.csv'):

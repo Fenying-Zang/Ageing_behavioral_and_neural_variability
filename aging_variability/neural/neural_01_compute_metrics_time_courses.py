@@ -44,7 +44,7 @@ Notes:
 • To resume safely, the main loop skips pids with an existing `.done` file.
 """
 #%%
-import config as C
+import aging_variability.config as C
 import logging
 import traceback
 import os
@@ -56,12 +56,12 @@ from iblatlas.atlas import AllenAtlas
 from brainbox.io.one import SpikeSortingLoader
 from iblutil.numerical import ismember
 from iblatlas.regions import BrainRegions
-from scripts.utils.neuron_utils import cal_presence_ratio, combine_regions, smoothing_sliding
-from scripts.utils.behavior_utils import clean_rts
+from aging_variability.utils.neuron_utils import cal_presence_ratio, combine_regions, smoothing_sliding
+from aging_variability.utils.behavior_utils import clean_rts
 from glob import glob
 import logging
 import math
-from scripts.utils.io import init_one, read_table
+from aging_variability.utils.io import init_one, read_table
 import json, shutil
 
 

@@ -7,18 +7,18 @@ output: figures/F1S2_num_trials_filtering.pdf
 """
 #%%
 from ibl_style.utils import get_coords, MM_TO_INCH, double_column_fig
-from scripts.utils.plot_utils import figure_style
+from aging_variability.utils.plot_utils import figure_style
 import figrid as fg
 from one.api import ONE
 import pandas as pd
 import seaborn as sns
-from scripts.utils.behavior_utils import filter_trials
-from scripts.utils.plot_utils import format_bf_annotation
-from scripts.utils.data_utils import add_age_group
+from aging_variability.utils.behavior_utils import filter_trials
+from aging_variability.utils.plot_utils import format_bf_annotation
+from aging_variability.utils.data_utils import add_age_group
 
-import config as C
-from scripts.utils.stats_utils import get_bf_results, get_permut_results
-from scripts.utils.io import init_one, read_table, save_figure
+import aging_variability.config as C
+from aging_variability.utils.stats_utils import get_bf_results, get_permut_results
+from aging_variability.utils.io import init_one, read_table, save_figure
 import logging
 
 
@@ -119,7 +119,7 @@ def main(save_fig=True):
 
 
 if __name__ == "__main__":
-    from scripts.utils.io import setup_logging
+    from aging_variability.utils.io import setup_logging
     setup_logging()
 
     main(save_fig=True)

@@ -8,16 +8,16 @@ import pandas as pd
 import os
 import numpy as np
 import seaborn as sns
-from scripts.utils.plot_utils import figure_style
+from aging_variability.utils.plot_utils import figure_style
 from ibl_style.utils import MM_TO_INCH
-import config as C
-from scripts.utils.plot_utils import create_slice_org_axes, format_bf_annotation
+import aging_variability.config as C
+from aging_variability.utils.plot_utils import create_slice_org_axes, format_bf_annotation
 import figrid as fg
-from scripts.utils.data_utils import bf_gaussian_via_pearson, interpret_bayes_factor, add_age_group
+from aging_variability.utils.data_utils import bf_gaussian_via_pearson, interpret_bayes_factor, add_age_group
 from statsmodels.genmod.families import Gaussian
-from scripts.utils.io import read_table
-from scripts.utils.stats_utils import run_permutation_test
-from scripts.utils.io import read_table, save_figure
+from aging_variability.utils.io import read_table
+from aging_variability.utils.stats_utils import run_permutation_test
+from aging_variability.utils.io import read_table, save_figure
 import logging
 
 
@@ -168,7 +168,7 @@ def main():
 
 
 if __name__ == "__main__":
-    from scripts.utils.io import setup_logging
+    from aging_variability.utils.io import setup_logging
     setup_logging()
 
     main()
