@@ -4,8 +4,6 @@ compute BFs with BayesFactor package, without any random effects structure
 #%%
 import pandas as pd
 import numpy as np
-import os
-import platform
 from aging_variability.utils.data_utils import interpret_bayes_factor, add_age_group
 from aging_variability.utils.io import read_table, get_suffix
 
@@ -19,16 +17,27 @@ import logging
 
 log = logging.getLogger(__name__)
 # ---------- R env ----------
-os.environ['R_HOME'] = r"C:/PROGRA~1/R/R-44~1.1" #TODO: costum your own R path here
-os.environ['R_USER'] = os.path.expanduser("~")
+# ---- MUST be at top of file, before any rpy2 import ----
+import os
+import platform
+
+r_home = r"C:\Program Files\R\R-4.5.1" #TODO: costum your own R path here
+os.environ["R_HOME"] = r_home
+os.environ["R_USER"] = os.path.expanduser("~")
 os.environ["R_DISABLE_CONSOLE_OUTPUT"] = "TRUE"
-os.environ['RPY2_CFFI_MODE'] = 'ABI'  
+os.environ["RPY2_CFFI_MODE"] = "ABI"
+os.environ["PATH"] = os.path.join(r_home, "bin", "x64") + os.pathsep + os.environ.get("PATH", "")
 
-# Load BayesFactor 
-bayesfactor = importr('BayesFactor')
+# ---- now import rpy2 ----
+from rpy2.robjects import Formula
+import rpy2.robjects as ro
+from rpy2.robjects.packages import importr
+from rpy2.robjects.conversion import localconverter
+from rpy2.robjects import default_converter, pandas2ri
 
-# Disable JIT (avoids rpy2 issues on Windows)
-ro.r('compiler::enableJIT(0)')
+# Load packages only after rpy2 is imported
+bayesfactor = importr("BayesFactor")
+ro.r("compiler::enableJIT(0)")
 
 try:  
     if platform.system() == "Windows":
@@ -209,7 +218,6 @@ def main(mean_subtraction=False, log_transform=True):
         chain_table.to_csv(C.RESULTSPATH / f'omnibus_{metric}_{get_suffix(mean_subtraction)}BF_chain_table.csv')
 
         BF10_age_category = interpret_bayes_factor(BF10_age)
-        BF10_region_category = interpret_bayes_factor(BF10_region)
 
         result_df = pd.DataFrame({
             'metric': [metric],

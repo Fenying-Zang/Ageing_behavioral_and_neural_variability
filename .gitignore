@@ -218,3 +218,8 @@ __marimo__/
 #Custom
 Process_checklist.md
 scratch/
+
+# Project-specific data and generated outputs
+data/
+results/
+figures/
