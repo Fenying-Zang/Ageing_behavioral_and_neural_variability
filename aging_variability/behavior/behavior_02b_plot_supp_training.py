@@ -3,7 +3,7 @@
 input: data/training_history_149subjs_2025_NEW.parquet
 output: figures/Fig1S1_training_history_stats.pdf
 
-Figure: Fig1-S1 — Older mice took longer to learn the task (same protocols)
+Figure: Fig1-S1
 1) training time course from start / get_trained
 2) performance (easy) on day of get_trained / first_recording
 3) #days/sessions/trials until first recording / get_trained
@@ -36,21 +36,53 @@ log = logging.getLogger(__name__)
 # Config 
 # =====================
 TRAINING_FILE = "training_history_149subjs_2025_NEW.parquet"
-SAVE_FIGURES = True
+TRAINING_AGE_FILE = "training_vs_recording_age_mice.csv"
+DAYS_PER_MONTH = 30
 N_JOBS = 6
 SHUFFLING = "labels1_global"
 FAMILY_FUNC = Gaussian()
-
+SAVE_FIGURES = True
 # =====================
 # 1. Load & Prepare data
 # =====================
 
 def prepare_training_table(df):
-    
-    """Add 'age_months', 'age_years', and 'age_group'; return a copy."""
+    """
+    Add age-at-training-start variables for age-based analyses.
+
+    Notes
+    -----
+    - age_months and age_years are based on age at training start.
+    - age_group is still defined using age at recording, so the young/old
+      grouping matches the main recording-based cohort definition.
+    """
 
     df = df.copy()
-    df = add_age_group(df)
+
+    age_table = read_table(C.DATAPATH / TRAINING_AGE_FILE)
+    age_table["age_start_months"] = age_table["age_at_start_computed"] / DAYS_PER_MONTH
+    age_table["age_recording_months"] = age_table["age_at_recording_computed"] / DAYS_PER_MONTH
+
+    age_cols = [
+        "mouse_name",
+        "age_at_start_computed",
+        "age_at_recording_computed",
+        "age_start_months",
+        "age_recording_months",
+    ]
+
+    df = df.merge(age_table[age_cols], on="mouse_name", how="left")
+
+    df["age_group"] = np.where(
+        df["age_at_recording_computed"] < C.AGE_GROUP_THRESHOLD,
+        "young",
+        "old",
+    )
+
+    df["mouse_age"] = df["age_at_start_computed"]
+    df["age_months"] = df["age_start_months"]
+    df["age_years"] = df["age_months"] / 12.0
+
     return df
 
 
@@ -124,27 +156,30 @@ def build_figure_layout():
     figure_style()
     fig = double_column_fig()
     width, height = fig.get_size_inches() / MM_TO_INCH
-    yspans = get_coords(height, ratios=[0.7, 1, 1, 1], space=[15, 25, 25], pad=5, span=(0, 1))
-    xspans2 = get_coords(width, ratios=[1, 1], space=25, pad=5, span=(0, 1))
-    xspans1 = get_coords(width, ratios=[1, 1, 1, 1], space=[18, 35, 18], pad=20, span=(0, 1))
-    xspans3 = get_coords(width, ratios=[1, 1, 1, 1], space=[20, 20, 20], pad=5, span=(0, 1))
-    xspans4 = get_coords(width, ratios=[1, 1, 1, 1], space=[20, 20, 20], pad=5, span=(0, 1))
+
+    yspans = get_coords(
+        height, ratios=[1, 1], space=[25], pad=5, span=(0, 0.6)
+    )
+    xspans1 = get_coords(
+        width, ratios=[0.65, 0.3], space=25, pad=5, span=(0.1, 0.9)
+    )
+    xspans2 = get_coords(
+        width, ratios=[0.65, 0.3], space=25, pad=5, span=(0.1, 0.9)
+    )
 
     axs = {
-        "time_course_start": fg.place_axes_on_grid(fig, xspan=xspans2[0], yspan=yspans[1]),
-        "time_course_trained": fg.place_axes_on_grid(fig, xspan=xspans2[1], yspan=yspans[1]),
-        "start_20": fg.place_axes_on_grid(fig, xspan=xspans1[0], yspan=yspans[0]),
-        "start_50": fg.place_axes_on_grid(fig, xspan=xspans1[1], yspan=yspans[0]),
-        "trained_10": fg.place_axes_on_grid(fig, xspan=xspans1[2], yspan=yspans[0]),
-        "trained_5": fg.place_axes_on_grid(fig, xspan=xspans1[3], yspan=yspans[0]),
-        "trained_days": fg.place_axes_on_grid(fig, xspan=xspans3[0], yspan=yspans[2]),
-        "trained_sessions": fg.place_axes_on_grid(fig, xspan=xspans3[1], yspan=yspans[2]),
-        "trained_trials": fg.place_axes_on_grid(fig, xspan=xspans3[2], yspan=yspans[2]),
-        "trained_easy_perf": fg.place_axes_on_grid(fig, xspan=xspans3[3], yspan=yspans[2]),
-        "f_record_days": fg.place_axes_on_grid(fig, xspan=xspans4[0], yspan=yspans[3]),
-        "f_record_sessions": fg.place_axes_on_grid(fig, xspan=xspans4[1], yspan=yspans[3]),
-        "f_record_trials": fg.place_axes_on_grid(fig, xspan=xspans4[2], yspan=yspans[3]),
-        "f_record_easy_perf": fg.place_axes_on_grid(fig, xspan=xspans4[3], yspan=yspans[3]),
+        "time_course_start": fg.place_axes_on_grid(
+            fig, xspan=xspans1[0], yspan=yspans[0]
+        ),
+        "trained_days": fg.place_axes_on_grid(
+            fig, xspan=xspans1[1], yspan=yspans[0]
+        ),
+        "time_course_trained": fg.place_axes_on_grid(
+            fig, xspan=xspans2[0], yspan=yspans[1]
+        ),
+        "trained_easy_perf": fg.place_axes_on_grid(
+            fig, xspan=xspans2[1], yspan=yspans[1]
+        ),
     }
     return fig, axs
 
@@ -177,12 +212,10 @@ def plot_training_comparison_group_mean(training_table, *, x, alignment,
                     xytext=(-10, 16), textcoords="offset points", color=palette['old'], fontsize=7)
         ax.annotate(f"{num_young} young mice", xy=(1, 0), ha="right", xycoords="axes fraction",
                     xytext=(-10, 10), textcoords="offset points", color=palette['young'], fontsize=7)
-        ax.axvline(x=20, ls="--", lw=0.5, alpha=0.8, c="gray")
-        ax.axvline(x=50, ls="--", lw=0.5, alpha=1, c="gray")
+
     else:
         ax.set(xlabel=xlabel, xlim=[-40, 0])
-        ax.axvline(x=-10, ls="--", lw=0.5, alpha=0.8, c="gray")
-        ax.axvline(x=-5, ls="--", lw=0.5, alpha=1, c="gray")
+
     sns.despine(offset=2, trim=False, ax=ax)
     return ax
 
@@ -201,29 +234,27 @@ def scatter_with_age_line(ax, df, y_col):
                     alpha=1, marker=".", legend=False, palette=C.PALETTE, hue_order=["young","old"], ax=ax)
     sns.despine(offset=2, trim=False, ax=ax)
 
-
-def plot_training_until_criterion(training_table, *, criterion, axes, stat_results):
-
-    """Three scatter subpanels (#days/#sessions/#trials) until a criterion; annotate with β/p_perm/BF; returns axes."""
+def plot_training_until_criterion(training_table, *, criterion, ax, stat_results):
+    """
+    Scatter panel for number of training days until a criterion.
+    """
 
     df = subset_for_criterion(training_table, criterion)
     df_ag = aggregate_until_criterion(df)
 
-    measures = ["num_days", "num_sessions", "num_trials"]
-    y_lables = ["# days", "# sessions", "# trials"]
-    for m, measure in enumerate(measures):
-        ax = axes[m]
-        beta, p_adj, p_perm, sig = extract_stats(stat_results, "y_var", measure)
-        txt = fmt_age_annotation(beta, p_perm, df_ag, measure)
-        ax.text(0.05, 1, txt, transform=ax.transAxes, fontsize=4)
-        scatter_with_age_line(ax, df_ag, measure)
-        if m == 1:
-            ax.set_xlabel("Age (months)")
-        else:
-            ax.set_xlabel(None)
-        # ax.set_ylabel(measure)
-        ax.set_ylabel(y_lables[m])
-    return axes
+    measure = "num_days"
+    y_label = "# training days"
+
+    beta, p_adj, p_perm, sig = extract_stats(stat_results, "y_var", measure)
+    txt = fmt_age_annotation(beta, p_perm, df_ag, measure)
+
+    ax.text(0.05, 1, txt, transform=ax.transAxes, fontsize=4)
+    scatter_with_age_line(ax, df_ag, measure)
+
+    ax.set_xlabel("Age at training start (months)")
+    ax.set_ylabel(y_label)
+
+    return ax
 
 
 def plot_performance_at_criterion(training_table, *, criterion, n_day_from_criterion,
@@ -252,7 +283,7 @@ def plot_performance_at_criterion(training_table, *, criterion, n_day_from_crite
 
     scatter_with_age_line(ax, data_before, "perf_easy")
     ax.set_ylim(0.1, 1.1)
-    ax.set_xlabel("Age (months)")
+    ax.set_xlabel("Age at training start (months)")
     ax.set_ylabel("Performance\n on easy trials")
     return ax
 
@@ -282,7 +313,8 @@ def stats_until_each_criterion(training_table, *, criteria=("first_recording", "
     
     """Permutation for totals until each criterion; caches a CSV under C.RESULTSPATH; returns a long stats table."""
 
-    filename = C.RESULTSPATH / f"training_until_each_criterion_{C.N_PERMUT_BEHAVIOR}permutation.csv"
+    # filename = C.RESULTSPATH / f"training_until_each_criterion_{C.N_PERMUT_BEHAVIOR}permutation.csv"
+    filename = C.RESULTSPATH / f"revision_training_until_each_criterion_{C.N_PERMUT_BEHAVIOR}permutation.csv"
     if filename.exists():
         all_results = read_table(filename)
     else:
@@ -325,7 +357,8 @@ def stats_perf_at_criterion(training_table, *, criteria=("first_recording", "get
     
     """Permutation for 'perf_easy' at day 0 of each criterion; caches CSV; returns a stats table."""
 
-    filename = C.RESULTSPATH / f"training_perf_at_criterion_{C.N_PERMUT_BEHAVIOR}permutation.csv"
+    # filename = C.RESULTSPATH / f"training_perf_at_criterion_{C.N_PERMUT_BEHAVIOR}permutation.csv"
+    filename = C.RESULTSPATH / f"revision_training_perf_at_criterion_{C.N_PERMUT_BEHAVIOR}permutation.csv"
     if filename.exists():
         df = read_table(filename)
     else:
@@ -454,43 +487,44 @@ def main():
     fig, axs = build_figure_layout()
 
     # Time course panels
-    plot_training_comparison_group_mean(training_table=training, x="num_days_from_start", alignment="start", ax=axs["time_course_start"])  
-    plot_training_comparison_group_mean(training_table=training, x="num_days_from_trained", alignment="get_trained", ax=axs["time_course_trained"])  
+    plot_training_comparison_group_mean(
+        training_table=training,
+        x="num_days_from_start",
+        alignment="start",
+        ax=axs["time_course_start"],
+    )
 
-    # Stats — until criterion
+    plot_training_comparison_group_mean(
+        training_table=training,
+        x="num_days_from_trained",
+        alignment="get_trained",
+        ax=axs["time_course_trained"],
+    )
+
+    # Stats and panel: number of training days until get_trained
     res_until = stats_until_each_criterion(training)
-    plot_training_until_criterion(training, criterion="get_trained",
-                                  axes=[axs["trained_days"], axs["trained_sessions"], axs["trained_trials"]],
-                                  stat_results=res_until[res_until["criterion"]=="get_trained"])
-    plot_training_until_criterion(training, criterion="first_recording",
-                                  axes=[axs["f_record_days"], axs["f_record_sessions"], axs["f_record_trials"]],
-                                  stat_results=res_until[res_until["criterion"]=='first_recording'])  
+    plot_training_until_criterion(
+        training,
+        criterion="get_trained",
+        ax=axs["trained_days"],
+        stat_results=res_until[res_until["criterion"] == "get_trained"],
+    )
 
-    # Stats — perf at criterion day 0
+    # Stats and panel: performance on get_trained day
     res_at0 = stats_perf_at_criterion(training)
-    plot_performance_at_criterion(training, criterion="get_trained", n_day_from_criterion=0,
-                                  ax=axs["trained_easy_perf"], stat_results=res_at0)
-    plot_performance_at_criterion(training, criterion="first_recording", n_day_from_criterion=0,
-                                  ax=axs["f_record_easy_perf"], stat_results=res_at0)
-
-    # Stats — perf from start days (20, 50)
-    res_from_start = stats_perf_from_start(training, days_from_start=(20, 50))
-    plot_performance_from_start(training, n_day_from_start=20, ax=axs["start_20"], stat_results=res_from_start)
-    plot_performance_from_start(training, n_day_from_start=50, ax=axs["start_50"], stat_results=res_from_start)
-
-    # Stats — perf before get_trained (-5, -10)
-    res_before = stats_perf_before_trained(training, days_from_trained=(-5, -10))
-    plot_performance_at_criterion(training, criterion="get_trained", n_day_from_criterion=-5,
-                                  ax=axs["trained_5"], stat_results=res_before)
-    plot_performance_at_criterion(training, criterion="get_trained", n_day_from_criterion=-10,
-                                  ax=axs["trained_10"], stat_results=res_before)
+    plot_performance_at_criterion(
+        training,
+        criterion="get_trained",
+        n_day_from_criterion=0,
+        ax=axs["trained_easy_perf"],
+        stat_results=res_at0,
+    )
 
     # Finalize
-    #plt.show()()
     if SAVE_FIGURES:
         os.makedirs(C.FIGPATH, exist_ok=True)
-        save_figure(fig, C.FIGPATH / "Fig1S1_training_history_stats.pdf", add_timestamp=True)
-
+        # save_figure(fig,C.FIGPATH / "Fig1S1_training_history_stats_test.pdf",add_timestamp=True)
+        save_figure(fig, C.FIGPATH / "revision_Fig1S1_training_history_stats.pdf", add_timestamp=True)
 
 if __name__ == "__main__":
     from aging_variability.utils.io import setup_logging
