@@ -219,24 +219,7 @@ __marimo__/
 Process_checklist.md
 scratch/
 
-# Project-specific local data and generated outputs
-data/tmp/
-data/interim/
-data/processed/
-data/cache/
-
-results/tmp/
-figures/tmp/
-
-
-# Large intermediate files
-*.parquet
-*.pkl
-*.pickle
-*.npy
-*.npz
-
-
-# Local logs / temporary files
-*.log
-*.tmp
+# Project-specific data and generated outputs
+data/
+results/
+figures/
