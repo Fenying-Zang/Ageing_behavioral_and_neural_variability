@@ -10,7 +10,7 @@ Fenying Zang, Leiden University, 2025, f.zang@fsw.leidenuniv.nl
 
 - Intermediate files needed for plotting are included in data/ and results/ (via Git LFS, see below).
 - Instructions for accessing the public data, along with an online browser, are available at https://docs.internationalbrainlab.org/notebooks_external/data_release_brainwidemap.html and https://www.internationalbrainlab.com/data.
-- The release of the newly recorded data is underway, and updates on access will be provided once finalized.
+- Our newly recorded data has also been released. See query_example_notebook.ipynb for a quick start.
 
 ## Installation & Setup
 
