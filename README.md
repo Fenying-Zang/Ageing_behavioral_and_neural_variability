@@ -63,7 +63,10 @@ ageing_behavioral_and_neural_variability/
 ├── run_all_without_R.py  # Full pipeline without R (skips Bayes Factors; regenerates remaining data + all figures)
 ├── requirements.txt      # Additional Python dependencies (on top of iblenv)
 ├── data/                 # Intermediate and derived data (tracked via Git LFS)
-├── scripts/              # Analysis and plotting code
+├── aging_variability/    # Analysis and plotting code
+│   └── behavior/         # Functions and scripts for the behavioral analyses
+│   └── neural/           # Functions and scripts for the neural analyses
+│   └── preprocessing/    # Preprocessing functions and scripts
 │   └── utils/            # Shared helper functions
 ├── figures/              # Generated figures
 └── results/              # Output CSVs and summary tables
