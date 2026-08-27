@@ -10,7 +10,24 @@ Fenying Zang, Leiden University, 2025, f.zang@fsw.leidenuniv.nl
 
 - Intermediate files needed for plotting are included in data/ and results/ (via Git LFS, see below).
 - Instructions for accessing the public data, along with an online browser, are available at https://docs.internationalbrainlab.org/notebooks_external/data_release_brainwidemap.html and https://www.internationalbrainlab.com/data.
-- Our newly recorded data has also been released. See query_example_notebook.ipynb for a quick start.
+- Our newly recorded data has also been released. See query_example_notebook.ipynb for a quick start. See [the doc page](https://docs.internationalbrainlab.org/notebooks_external/2025_data_release_aging_zang.html) for more details.
+
+### Trial-level behavioural data
+
+A pre-merged trial-level behavioural table containing all trials from all available sessions is available [here](data/all_sessions_trial_level_behavioural_data.csv).
+
+Unlike the subset used in the published behavioural analysis, this table retains all trials from each session. Two Boolean columns document the relevant analysis selections:
+
+- `neural_qc`: whether the session passed the neural quality-control criteria. The behavioural analyses presented in Fig. 1 were restricted to these sessions.
+- `pass_filter_trials`: whether the trial passed the behavioural trial filters, including restriction to the first 400 trials of each session and the response-time criteria.
+
+The subset used for Fig. 1 can therefore be selected with:
+
+```python
+fig1_trials = trials[
+    trials["neural_qc"] & trials["pass_filter_trials"]
+].copy()
+```
 
 ## Installation & Setup
 
